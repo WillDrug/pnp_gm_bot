@@ -2,7 +2,8 @@ import time
 from DataBase import *
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import create_engine
-
+__EMPTY_PAYLOAD__ = dict()
+__EMPTY_PAYLOAD__['marker'] = ''
 # INTERFACE CONTRACTS FUNCTION
 # always returns next action
 # empty action is a payload {'type': 'none'}
@@ -72,7 +73,7 @@ class GameEngine:
                 newgame = dict()
                 newgame['marker'] = 'main'
                 newgame['payload'] = dict()
-                return self.create_game(username, None, newgame) # create game
+                return self.create_game(username, newgame) # create game
         return {'type': 'none'}
 
     def create_game(self, username, payload):
@@ -89,29 +90,41 @@ class GameEngine:
                 payload['payload']['chosen'] = ['Создать']
         if payload['marker'] == 'setting_chosen':
             if payload['payload']['chosen'] == 'Создать':
-                return request_gather(1, 'create_game', 'new_setting', 'Пришлите мне имя Сеттинга:')
+                payload['payload']['marker'] = 'new_setting'
             else:
                 setting_chosen = self.session.query(Setting).filter(Setting.owner == username).\
                     filter(Setting.setting_name == payload['payload']['chosen']).first()
                 new_module = Module(module_id=username+str(int(time.time())),setting_id = setting_chosen.setting_id,
                             module_name='', flavourtext='')
+                context = self.get_context(username)
+                context.stored_id = new_module.module_id
         if payload['marker'] == 'new_setting':
             context = self.get_context(username)
             context.context_function = 'create_game'
             context.context_marker = 'setting_created'
+            context.on_finish = 'create_game'
+            context.finish_marker = 'setting_created'
             self.session.commit()
-            set_payload = dict()
-            set_payload['marker'] = ''
-            return self.create_setting(username, set_payload)
+            return self.create_setting(username, __EMPTY_PAYLOAD__)
+        if payload['marker'] == 'setting_created':
+            return "WHAT WHAT"
 
     def create_setting(self, username, payload):
         if payload['marker'] == '':
             return request_gather(1, 'create_setting', 'name_chosen', 'Выберите имя для сеттинга')
         if payload['marker'] == 'name_chosen':
+            context = self.get_context(username)
             setting = Setting(setting_id=username+str(int(time.time())), setting_name=payload['payload']['chosen'][0],
                               flavourtext='', owner=username)
+            context.stored_id = setting.setting_id
             self.session.commit()
-            """ ??????????????????????? """
+            return request_gather(1, 'create_setting', 'flavour_chosen', 'Пришлите описание сеттинга:')
+        if payload['marker'] == 'flavour_chosen':
+            context = self.get_context(username)
+            setting = self.session.query(Setting).filter(Setting.setting_id == context.stored_id).first()
+            setting.flavourtext = payload['payload']['chosen'][0]
+            self.session.commit()
+            return eval('self.'+context.on_finish)(username, context.finish_marker)
     # INTERFACE FUNCTIONS
     def list_games(self, username):
         return self.session.query(GameList).filter(GameList.username == username).all()

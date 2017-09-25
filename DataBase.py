@@ -216,10 +216,11 @@ class GameContext(Base):
     context_marker = Column(String)
     on_finish = Column(String)
     finish_marker = Column(String)
+    stored_id = Column(String)
 
     def __repr__(self):
-        return "<GameContext(username='%s', context_function='%s', on_finish='%s')>" % (
-            self.username, self.context_function, self.on_finish
+        return "<GameContext(username='%s', context_function='%s', context_marker='%s', on_finish='%s', finish_marker='%s', stored_id='%s')>" % (
+            self.username, self.context_function, self.context_marker, self.on_finish, self.finish_marker, self.stored_id
         )
 
 # INTERFACE CLASSES
