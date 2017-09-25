@@ -52,8 +52,11 @@ class Character(Base):
 
     char_id = Column(String, primary_key=True)
     owner = Column(String)
+    name = Column(String)
     reference = Column(String)
     flavourtext = Column(String)
+    maneuver_list = Column(String)
+    experience = Column(Integer)
 
     def __repr__(self):
         return  "<Character(char_id='%s', username='%s', reference='%s', flavourtext='%s')>" % (
@@ -62,29 +65,56 @@ class Character(Base):
 
     def populate(self, session):
         self.actions = dict()
-        self.stats = session.query(Stats).filter(Stats.char_id == self.char_id).all()
-        self.actions['Stats'] = []
-        for i in self.stats:
-            self.action['Stats'].append(i.parm_name)
+        self.parms = dict()
+        self.plugins = [CoreParms, Stats, Combat, Magic, Secondary, Tertiary]
+        for q in plugins:
+            self.parms[q.__referencename__] = self.load_parm(q, session)
+            self.actions[q.__referencename__] = []
+            self.append_parm(self.parms[q.__referencename__], q.__referencename__)
+
+        self.influences = dict()
+        self.influence_actions = dict()
+        self.influence_list = [Feats, Items]
+        for q in self.influences:
+            self.influences[q.__referencename__] = self.load_parm(q, session)
+            self.influences[q.__referencename__] = []
+            self.append_influence(self.influence_actions[q.__referencename__], q.__referencename__)
 
         return True
 
-    def roll(self):
+    def load_parm(self, parm, session):
+        return session.query(parm).filter(parm.char_id == self.char_id).all()
+
+    def append_parm(self, parm, declared_name):
+        self.actions[declared_name] = []
+        for i in parm:
+            self.actions[declared_name].append(parm.parm_name)
+
+    def append_influence(self, parm, declared_name):
+        self.influences[declared_name] = []
+        for q in parm:
+            self.influences[declared_name].append(parm)
+
+
 
 class CoreParms(Base, BaseCharacterParm):
+    __tablename__ = 'coreparms'
+
     __basedice__ = 100
     __parmlist__ = 'Здоровье,Инициатива'
-    __cost__ = 1
+    __cost__ = 99999 #lol kek
     __referencename__ = 'Core'
 
     def calculate_bonus(self, influence):
-        return self.parm_value*10 + influence
+        return (self.parm_value+influence)*10
 
 
 class Stats(Base, BaseCharacterParm):
+    __tablename__ = 'stats'
+
     __basedice__ = 10
     __parmlist__ = 'Сила,Выносливость,Ловкость,Скорость,Интеллект,Внимание,Мудрость,Харизма'
-    __cost__ = 10  # each point costs 10
+    __cost__ = 25  # each point costs 10
     __referencename__ = 'Stats'
 
 
@@ -109,6 +139,47 @@ class Stats(Base, BaseCharacterParm):
         elif new_parm_value >= 10:
             return 15+5*(new_parm_value-10)
 
+class Combat(Base, BaseCharacterParm):
+    __tablename__ = 'combat'
+
+    __basedice__ = 100
+    __parmlist__ = 'Атака,Блок,Уворот,Стойкость'
+    __cost__ = 5
+    __referencename__ = 'Combat'
+
+
+class Magic(Base, BaseCharacterParm):
+    __tablename__ = 'magic'
+
+    __basedice__ = 100
+    __parmlist__ = 'Атака,Защита,Аккумуляция'
+    __cost__ = 5
+    __referencename__ = 'Magic'
+
+class Secondary(Base, BaseCharacterParm):
+    __tablename__ = 'secondary'
+
+    __basedice__ = 100
+    __parmlist__ = 'Акробатика,Атлетика,Оккультизм,Внимание,Социал,Стиль'
+    __cost__ = 1
+    __referencename__ = 'Secondary'
+
+
+class Tertiary(Base, BaseCharacterParm):
+    __tablename__ = 'tertiary'
+
+    __basedice__ = 100
+    __parmlist__ = 'dynamic'
+    __cost__ = 0.1
+    __referencename__ = 'Tertiary'
+
+class Feats(Base, BaseCharacterInfluence):
+    __tablename__ = 'feats'
+    __referencename__ = 'Feats'
+
+class Items(Base, BaseCharacterInfluence):
+    __tablename__ = 'items'
+    __referencename__ = 'Items'
 
 class Scene(Base):
     __tablename__ = 'scene'

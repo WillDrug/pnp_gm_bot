@@ -147,7 +147,7 @@ class GMBot:
                 pass
             self.game_engine.session.delete(context)
             self.game_engine.session.commit()
-            return eval('self.game_engine.'+finish)(username, None, finish_payload)
+            return eval('self.game_engine.'+finish)(username, finish_payload)
 
 
     def choose(self, msg, context):
@@ -223,7 +223,7 @@ class GMBot:
             self.game_engine.session.delete(context)
             self.game_engine.session.commit()
             # remove process context!
-            next_action = eval('self.game_engine.' + context.on_finish)(context.username, None, payload)
+            next_action = eval('self.game_engine.' + context.on_finish)(context.username, payload)
             self.register_action(username, next_action)
         else:
             # update payloads in context

@@ -1,4 +1,5 @@
-from DataBase import GameContext, GameList, __DBNAME__
+import time
+from DataBase import *
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import create_engine
 
@@ -53,7 +54,7 @@ class GameEngine:
 
     # MENU STRUCTURE
 
-    def main_menu(self, username, context, payload):
+    def main_menu(self, username, payload):
         if payload['marker'] == '':  # no requests were made prior to this
             text = payload['payload']  # we don't need this in the main menu, but still
             gameslist = self.list_games(username)
@@ -74,14 +75,43 @@ class GameEngine:
                 return self.create_game(username, None, newgame) # create game
         return {'type': 'none'}
 
-    def create_game(self, username, context, payload):
+    def create_game(self, username, payload):
         if payload['marker'] == 'main': #create game process starts
-            return request_gather(1, 'create_game', 'done', 'Пришлите мне название игры:')
-        if payload['marker'] == 'done':
-            print(payload)
-            return {'type': 'none'}
+            settings = self.session.query(Setting).filter(Setting.owner == username).all()
+            if settings.__len__()>0:
+                chooselist = []
+                for i in settings:
+                    chooselist.append(setting_name)
+                chooselist.append('Создать')
+                return request_choose(chooselist, 1, 'create_game', 'setting_chosen', 'Выберите сеттинг (или создайте новый)')
+            else:
+                payload['marker'] = 'setting_chosen'
+                payload['payload']['chosen'] = ['Создать']
+        if payload['marker'] == 'setting_chosen':
+            if payload['payload']['chosen'] == 'Создать':
+                return request_gather(1, 'create_game', 'new_setting', 'Пришлите мне имя Сеттинга:')
+            else:
+                setting_chosen = self.session.query(Setting).filter(Setting.owner == username).\
+                    filter(Setting.setting_name == payload['payload']['chosen']).first()
+                new_module = Module(module_id=username+str(int(time.time())),setting_id = setting_chosen.setting_id,
+                            module_name='', flavourtext='')
+        if payload['marker'] == 'new_setting':
+            context = self.get_context(username)
+            context.context_function = 'create_game'
+            context.context_marker = 'setting_created'
+            self.session.commit()
+            set_payload = dict()
+            set_payload['marker'] = ''
+            return self.create_setting(username, set_payload)
 
-
+    def create_setting(self, username, payload):
+        if payload['marker'] == '':
+            return request_gather(1, 'create_setting', 'name_chosen', 'Выберите имя для сеттинга')
+        if payload['marker'] == 'name_chosen':
+            setting = Setting(setting_id=username+str(int(time.time())), setting_name=payload['payload']['chosen'][0],
+                              flavourtext='', owner=username)
+            self.session.commit()
+            """ ??????????????????????? """
     # INTERFACE FUNCTIONS
     def list_games(self, username):
         return self.session.query(GameList).filter(GameList.username == username).all()
