@@ -7,7 +7,7 @@ class BaseCharacterParm:
     __cost__ = 0.1  # each point gives +10
     __referencename__ = 'Parm'
 
-    char_id = Column(String, primary_key=True, ForeignKey('character.char_id'))
+    char_id = Column(String, primary_key=True)
     parm_name = Column(String, primary_key=True)
     parm_value = Column(Integer)
     bonus_sources = Column(String)
@@ -21,13 +21,13 @@ class BaseCharacterParm:
     def calculate_bonus(self, influence):
         return (self.parm_value + influence) * 5
 
-    
+
 
 class BaseCharacterInfluence:
     __referencename__ = 'Influence'
     __cost__ = 50
 
-    char_id = Column(String, primary_key=True, ForeignKey('character.char_id'))
+    char_id = Column(String, primary_key=True)
     name = Column(String, primary_key=True)
     apply_to = Column(String)
     apply_num = Column(Integer)

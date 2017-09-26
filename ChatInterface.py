@@ -5,7 +5,7 @@ from telepot.namedtuple import InlineKeyboardMarkup, InlineKeyboardButton, \
     InputTextMessageContent, ReplyKeyboardMarkup, KeyboardButton, ReplyKeyboardRemove
 from telepot.exception import TelegramError
 from GameEngine import GameEngine
-from DataBase import InterfaceContext, UserIds
+from DataBase import InterfaceContext, UserId
 import datetime
 import time
 import json
@@ -41,17 +41,22 @@ class GMBot:
         username = msg['from']['username']
         context = self.get_context(username)
         if message_flavor == 'chat' and msg['text'] == '/clear':  # FIX THIS
-            self.game_engine.session.delete(context)
+            if context is not None:
+                self.game_engine.session.delete(context)
+            gcontext = self.game_engine.get_context(username)
+            if gcontext is not None:
+                self.game_engine.session.delete(gcontext)
             self.game_engine.session.commit()
+            return True
         if context is not None:
             eval('self.' + context.context_function)(msg, context)
             return True
 
         # only pass text to the GameEngine
         if message_flavor == 'chat':
-            chat_id = self.get_chat(username)
+            chat_id = self.get_chat_id(username)
             if chat_id is None:
-                self.game_engine.session.add(UserIds(username=username, chat_id=msg['from']['id']))
+                self.game_engine.session.add(UserId(username=username, chat_id=msg['from']['id']))
                 self.game_engine.session.commit()
             content_type, chat_type, chat_id = glance(msg, message_flavor)
             if content_type != 'text' or chat_type != 'private':
@@ -67,8 +72,6 @@ class GMBot:
     def get_context(self, username):
         return self.game_engine.session.query(InterfaceContext).filter(InterfaceContext.username == username).first()
 
-    def get_chat(self, username):
-        return self.game_engine.session.query(UserIds).filter(UserIds.username == username).first()
 
     def register_action(self, username, action):
         # POSSIBLE CHOICE:
@@ -79,6 +82,16 @@ class GMBot:
         # structure: type, callback(optional), marker(optional), flavourtext, payload:
         type = action['type']
         if type == 'send':
+            empty_return_payload = dict()
+            empty_return_payload['sent'] = []
+            context = InterfaceContext(username=username, context_function='send',
+                                       return_payload=json.dumps(empty_return_payload),
+                                       request_payload=json.dumps(action['payload']),
+                                       flavourtext=action['flavourtext'],
+                                       on_finish=action['callback'], marker=action['marker'])
+            self.game_engine.session.add(context)
+            self.game_engine.session.commit()
+            self.send(None, context)
             return True
         elif type == 'gather':
             empty_return_payload = dict()
@@ -111,6 +124,38 @@ class GMBot:
         else:
             self.log('GameEngine sent unexpected type!')
         return True
+
+    def send(self, msg, context):
+        request_payload = json.loads(context.request_payload)
+        return_payload = json.loads(context.return_payload)
+        finish_up = False
+        if msg is None:
+            for i in request_payload['userlist']:
+                chat_id = self.get_chat_id(i)
+                try:
+                    self.core.sendMessage(chat_id, context.flavourtext)
+                    return_payload['sent'].append(i)
+                except TelegramError:
+                    pass
+            finish_up = True
+
+        context.request_payload = json.dumps(request_payload)
+        context.return_payload = json.dumps(return_payload)
+        self.game_engine.session.commit()
+
+        if finish_up:
+            finish = context.on_finish
+            username = context.username
+            finish_payload = dict()
+            finish_payload['marker'] = context.marker
+            finish_payload['payload'] = return_payload
+            self.game_engine.session.delete(context)
+            self.game_engine.session.commit()
+            if finish != '':
+                next_action = eval('self.game_engine.' + finish)(username, finish_payload)
+                return self.register_action(username, next_action)
+            else:
+                return True
 
     def gather(self, msg, context):
         request_payload = json.loads(context.request_payload)
@@ -147,7 +192,8 @@ class GMBot:
                 pass
             self.game_engine.session.delete(context)
             self.game_engine.session.commit()
-            return eval('self.game_engine.'+finish)(username, finish_payload)
+            next_action = eval('self.game_engine.'+finish)(username, finish_payload)
+            return self.register_action(username, next_action)
 
 
     def choose(self, msg, context):
@@ -172,6 +218,7 @@ class GMBot:
                 for a, cnt in zip(button_list, range(1, button_list.__len__() + 1)):
                     if cnt % 5 == 0:
                         keyrow += 1
+                        markup.inline_keyboard.append([])
                     markup.inline_keyboard[keyrow].append(InlineKeyboardButton(text=a, callback_data=a))
         else:
             # many buttons! MANY MANY BUTTONS!
@@ -220,10 +267,11 @@ class GMBot:
             payload['marker'] = context.marker
             payload['payload'] = return_payload
             username = context.username
+            finish = context.on_finish
             self.game_engine.session.delete(context)
             self.game_engine.session.commit()
             # remove process context!
-            next_action = eval('self.game_engine.' + context.on_finish)(context.username, payload)
+            next_action = eval('self.game_engine.' + finish)(username, payload)
             self.register_action(username, next_action)
         else:
             # update payloads in context
@@ -233,7 +281,11 @@ class GMBot:
         return True
 
     def get_chat_id(self, username):
-        return self.game_engine.session.query(UserIds.chat_id).filter(UserIds.username == username).first()[0]
+        chat_id = self.game_engine.session.query(UserId.chat_id).filter(UserId.username == username).first()
+        if chat_id is not None:
+            return chat_id[0]
+        else:
+            return None
 
 
 key = sys.argv[1]

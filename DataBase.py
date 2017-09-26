@@ -24,9 +24,10 @@ class Module(Base):
     __tablename__ = 'module'
 
     module_id = Column(String, primary_key=True)
-    setting_id = Column(String, ForeignKey('setting.setting_id'))
+    setting_id = Column(String)
     module_name = Column(String)
     flavourtext = Column(String)  #flavour that descripts and starts the module
+    finished = Column(Boolean)
 
     def __repr__(self):
         return "<Module(module_id='%s', setting_id='%s', module_name='%s', flavourtext='%s')>" % (
@@ -36,7 +37,7 @@ class Module(Base):
 class ModulePlayer(Base):
     __tablename__ = 'moduleplayer'
 
-    game_id = Column(String, ForeignKey('module.module_id'), primary_key=True)
+    module_id = Column(String, primary_key=True)
     username = Column(String, primary_key=True)
     char_id = Column(String)
     in_game = Column(Boolean)
@@ -46,7 +47,7 @@ class ModulePlayer(Base):
             self.game_id, self.username
         )
 
-1
+
 class Character(Base):
     __tablename__ = 'character'
 
@@ -179,7 +180,9 @@ class Feats(Base, BaseCharacterInfluence):
 
 class Items(Base, BaseCharacterInfluence):
     __tablename__ = 'items'
-    __referencename__ = 'Items'
+    def populate(self):
+        super()
+        self.__referencename__ = 'Items'
 
 class Scene(Base):
     __tablename__ = 'scene'
@@ -196,7 +199,7 @@ class ScenePlayer(Base):
     __tablename__ = 'sceneplayer'
 
     char_id = Column(String, primary_key=True)  #one character to one scene at all times.
-    scene_id = Column(String, ForeignKey('scene.scene_id'))
+    scene_id = Column(String)
 
     def __repr__(self):
         return "<ScenePlayer(char_id='%s', scene_id='%s')>" % (
