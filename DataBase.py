@@ -51,16 +51,18 @@ class ModulePlayer(Base):
 class Character(Base):
     __tablename__ = 'character'
 
-    char_id = Column(String, primary_key=True)
-    owner = Column(String)
-    name = Column(String)
+    setting_id = Column(String, primary_key=True)
+    owner = Column(String, primary_key=True)
+    name = Column(String, primary_key=True)
+    display_name = Column(String)
+    known = Column(Boolean)
     reference = Column(String)
     flavourtext = Column(String)
     maneuver_list = Column(String)
     experience = Column(Integer)
 
     def __repr__(self):
-        return  "<Character(char_id='%s', username='%s', reference='%s', flavourtext='%s')>" % (
+        return "<Character(char_id='%s', username='%s', reference='%s', flavourtext='%s')>" % (
             self.char_id, self.username, self.reference, self.flavourtext
         )
 
@@ -96,6 +98,8 @@ class Character(Base):
         for q in parm:
             self.influences[declared_name].append(parm)
 
+class CharacterExtraDetails(Base):
+    __tablename__ = 'extradetails'
 
 
 class CoreParms(Base, BaseCharacterParm):

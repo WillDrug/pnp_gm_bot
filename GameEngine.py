@@ -66,7 +66,6 @@ class GameEngine:
             self.session.commit()
             context = self.get_context(username)
         return eval('self.' + context.context_function)(username, {'marker': '', 'payload': text})
-        return False
 
     # MENU STRUCTURE
 
@@ -76,11 +75,12 @@ class GameEngine:
             chooselist = []
             gming, playing = self.list_games(username)
             for q in gming:
-                chooselist.append('Мастер: '+q.module_name)
+                chooselist.append('Мастер: ' + q.module_name)
             for q in playing:
-                chooselist.append('Играть: '+q.module_name)
+                chooselist.append('Играть: ' + q.module_name)
             chooselist.append('Создать Игру')
-            return request_choose(chooselist, 1, 'main_menu', 'first_chosen', 'Вы в главном меню.\nВыберите игру для входа или создайте новую.')
+            return request_choose(chooselist, 1, 'main_menu', 'first_chosen',
+                                  'Вы в главном меню.\nВыберите игру для входа или создайте новую.')
         if payload['marker'] == 'first_chosen':
             # payload will be from CHOOSE here.
             chosen = payload['payload']['chosen'][0]
@@ -157,7 +157,7 @@ class GameEngine:
             context.context_marker = ''
             context.on_finish = ''
             context.finish_marker = ''
-            context.stored_id = module.module_id #active game stored here
+            context.stored_id = module.module_id  # active game stored here
             self.session.commit()
             return request_send([username], 'game', 'first_entrance', 'Вы в игре.')
 
@@ -183,20 +183,77 @@ class GameEngine:
 
     def game(self, username, payload):
         # context.stored_id holds module id
+        # generic commands:
+        # split
         if payload['marker'] == 'player':
-            if 'chosen' not in payload['payload']
-            return request_gather(1, 'game', 'player', 'Все что вы напишете будет действием персонажа. Если вам надо написать другим игрокам в общий чат используйте команду /chat (можно сразу "/chat текст сообщения".\nВыйти из игры можно по команде /leave')
+            char = self.get_character(username)
+            if char is None:
+                context = self.get_context(username)
+                context.finish_marker = 'player'
+                context.on_finish = 'game'
+                self.session.commit()
+                return self.create_character(username, __EMPTY_PAYLOAD__)
+            if 'chosen' not in payload['payload']:
+                return request_gather(1, 'game', 'player',
+                                      'Все что вы напишете будет действием персонажа. '
+                                      'Если вам надо написать другим игрокам в общий чат используйте команду /chat '
+                                      '(можно сразу "/chat текст сообщения".\nВыйти из игры можно по команде /leave\n'
+                                      'Команды игрока:\n/me - Показывает вашего персонажа\n'
+                                      '/chars - показывает список персонажей в сцене с вами\n'
+                                      '/remind - Показывает описание сцены и последние три действия')
         if payload['marker'] == 'dm':
             # this is a player action or DM flavourtext
             return request_gather(1, 'game', 'player',
-                                  'Все что вы напишете будет описанием сцены. Если вам надо написать другим игрокам в общий чат используйте команду /chat (можно сразу "/chat текст сообщения".\nВыйти из игры можно по команде /leave\nКоманды мастера игры включают:\n')
+                                  'Все что вы напишете будет описанием сцены. '
+                                  'Если вам надо написать другим игрокам в общий чат используйте команду /chat '
+                                  '(можно сразу "/chat текст сообщения".\nВыйти из игры можно по команде /leave\n'
+                                  'Команды мастера игры включают:\n/scene - Управление сценами\n'
+                                  '/chars - Управление персонажами (PC и NPC)\n'
+                                  '/request - запрашивает бросок навыка\n'
+                                  '/pause - Ставит отображение лога действий на паузу и возвращает наза\n'
+                                  '/turns - Включает пораундовый режим')
+
+    def get_current_setting(self, username):
+        return self.session.query(Setting).join(Module, Module.setting_id == Setting.setting_id).filter(
+            Module.module_id == self.get_context(username).stored_id)
+
+    def get_character(self, username):
+        return self.session.query(Character).filter(Character.owner == username).filter(
+            Character.setting_id == self.get_current_setting(username).setting_id).first()
+
+    def create_character(self, username, payload):
+        if payload['marker'] == '':  # start creation
+            return request_gather(1, 'create_character', 'name', 'Введите имя персонажа (как оно будет отображаться):')
+        if payload['marker'] == 'name':
+            char = Character(setting_id=self.get_current_setting(username).setting_id, owner=username,
+                             name=payload['payload']['chosen'][0], display_name='', known=False,
+                             reference='', flavourtext='', maneuver_list='', experience=600)
+            context = self.get_context(username)
+            context.stored_id = char.name
+            self.session.add(char)
+            self.session.commit()
+            return request_gather(1, 'create_character', 'display_name',
+                                  'Введите имя, которое будет отображаться пока персонажа не знают '
+                                  '(например, "Человек в Шляпе"):')
+        if payload['marker'] == 'display_name'
+            char = self.get_character(username)
+            char.display_name = payload['payload']['chosen'][0]
+            return request_gather(1, 'create_character', 'reference',
+                                  'Пришлите ссылки на референсы персонажа (или на рисунок)\n'
+                                  'Использование файлов будет сделано позже')
+        if payload['marker'] == 'reference':
+            char = self.get_character(username)
+            char.reference = payload['payload']['chosen'][0]
+            return request_gather(1, 'create_character', 'flavour',
+                                  'Введите описание персонажа:')
+        # add something like Character Extra Details for spellbook \ maneuver book
 
     # INTERFACE FUNCTIONS
     def list_games(self, username):
         dming = self.session.query(Module).join(Setting, Setting.setting_id == Module.setting_id).filter(
             Setting.owner == username).filter(~Module.finished).all()
         playing = self.session.query(Module).join(ModulePlayer,
-                                                              ModulePlayer.module_id == Module.module_id).filter(
+                                                  ModulePlayer.module_id == Module.module_id).filter(
             ModulePlayer.username == username).filter(~Module.finished).all()
 
         return dming, playing
