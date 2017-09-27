@@ -29,11 +29,38 @@ class BaseCharacterInfluence:
 
     char_id = Column(String, primary_key=True)
     name = Column(String, primary_key=True)
-    apply_to = Column(String)
-    apply_num = Column(Integer)
+    apply_to = Column(String)   # list
+    apply_num = Column(Integer) # list
     flavourtext = Column(String)
+    active = Column(Boolean)
 
     def __repr__(self):
         return "<%s(char_id='%s', name='%s', apply_to='%s', apply_num='%i', flavourtext='%s')>" % (
             self.__class__, self.char_id, self.name, self.apply_to, self.apply_num, self.flavourtext
+        )
+
+class BaseCharacterManeuver:
+    __referencename__ = 'List'
+    __cost__ = 40
+
+    char_id = Column(String, primary_key=True)
+    name = Column(String, primary_key=True)
+    flavourtext = Column(String)
+
+    def __repr__(self):
+        return "<%s(char_id='%s', name='%s', flavourtext='%s')>" % (
+            self.__class__, self.char_id, self.name, self.flavourtext
+        )
+
+class BaseCharacterResource:
+    __referencename__ = 'Resource'
+
+    char_id = Column(String, primary_key=True)
+    name = Column(String, primary_key=True)
+    max_value = Column(Integer)
+    cur_value = Column(Integer)
+
+    def __repr__(self):
+        return "<%s(char_id='%s', name='%s', max_value='%i', cur_value='%i')>" % (
+            self.__class__, self.char_id, self.name, self.max_value, self.cur_value
         )

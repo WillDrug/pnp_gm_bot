@@ -10,7 +10,8 @@ import datetime
 import time
 import json
 import sys
-
+from local import lang
+locale = lang['ru']
 """
     RULES:
         
@@ -166,7 +167,7 @@ class GMBot:
         username = context.username
         if msg is None:
             if request_payload['max_num'] == 0:
-                markup = InlineKeyboardMarkup(inline_keyboard = [[InlineKeyboardButton(text='Готово', callback_data='finish')]])
+                markup = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text=locale['interface']['done'], callback_data='finish')]])
             return_payload['msg_id'] = self.core.sendMessage(chat_id=chat_id, text=context.flavourtext, reply_markup=markup)['message_id']
         else:
             message_flavor = flavor(msg)
@@ -242,7 +243,7 @@ class GMBot:
                         text=a if a not in return_payload['chosen'] else '[' + a + ']',
                         callback_data=a)
                     )
-                markup.inline_keyboard.append([InlineKeyboardButton(text='Готово', callback_data='finish')])
+                markup.inline_keyboard.append([InlineKeyboardButton(text=locale['interface']['done'], callback_data='finish')])
         # get chat id
         chat_id = self.get_chat_id(context.username)
         # manupulate messages
@@ -256,7 +257,7 @@ class GMBot:
             pretty_string = pretty_string[:-2]
             try:
                 self.core.editMessageText((chat_id, return_payload['msg_id']),
-                                          text=context.flavourtext + '\nВы выбрали: ' + pretty_string)
+                                          text=context.flavourtext + '\n' + locale['interface']['chosen'] + pretty_string)
                 self.core.editMessageReplyMarkup((chat_id, return_payload['msg_id']), reply_markup=markup)
             except TelegramError:
                 pass

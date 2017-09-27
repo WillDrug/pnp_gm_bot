@@ -3,7 +3,8 @@ from DataBase import __DBNAME__
 from DataBase import *
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import create_engine
-
+from local import lang
+locale = lang['ru']
 __EMPTY_PAYLOAD__ = dict()
 __EMPTY_PAYLOAD__['marker'] = ''
 
@@ -75,16 +76,16 @@ class GameEngine:
             chooselist = []
             gming, playing = self.list_games(username)
             for q in gming:
-                chooselist.append('Мастер: ' + q.module_name)
+                chooselist.append(locale['game']['master'] + q.module_name)
             for q in playing:
-                chooselist.append('Играть: ' + q.module_name)
-            chooselist.append('Создать Игру')
+                chooselist.append(locale['game']['play'] + q.module_name)
+            chooselist.append(locale['game']['create_game'])
             return request_choose(chooselist, 1, 'main_menu', 'first_chosen',
-                                  'Вы в главном меню.\nВыберите игру для входа или создайте новую.')
+                                  locale['game']['main_menu'])
         if payload['marker'] == 'first_chosen':
             # payload will be from CHOOSE here.
             chosen = payload['payload']['chosen'][0]
-            if chosen == 'Создать Игру':
+            if chosen == locale['game']['create_game']:
                 newgame = dict()
                 newgame['marker'] = 'main'
                 newgame['payload'] = dict()
@@ -96,9 +97,9 @@ class GameEngine:
                 context.context_function = 'game'
                 context.finish_marker = ''
                 context.on_finish = ''
-                if chosen.startswith('Играть: '):
+                if chosen.startswith(locale['game']['play']):
                     context.context_marker = 'player'
-                elif chosen.startswith('Мастер: '):
+                elif chosen.startswith(locale['game']['master']):
                     context.context_marker = 'gm'
                 self.session.commit()
                 return request_send([username], 'game', 'first_entrance', 'Вы в игре.')
@@ -113,12 +114,12 @@ class GameEngine:
                     chooselist.append(i.setting_name)
                 chooselist.append('Создать')
                 return request_choose(chooselist, 1, 'create_game', 'setting_chosen',
-                                      'Выберите сеттинг (или создайте новый)')
+                                      locale['game']['choose_setting'])
             else:
                 payload['marker'] = 'setting_chosen'
-                payload['payload']['chosen'] = ['Создать']
+                payload['payload']['chosen'] = [locale['game']['create']]
         if payload['marker'] == 'setting_chosen':
-            if payload['payload']['chosen'][0] == 'Создать':
+            if payload['payload']['chosen'][0] == locale['game']['create']:
                 payload['marker'] = 'new_setting'
             else:
                 setting_chosen = self.session.query(Setting).filter(Setting.owner == username). \
@@ -142,13 +143,13 @@ class GameEngine:
             context.stored_id = new_module.module_id
             self.session.add(new_module)
             self.session.commit()
-            return request_gather(1, 'create_game', 'module_name', 'Введите название модуля:')
+            return request_gather(1, 'create_game', 'module_name', locale['game']['type_module_name'])
         if payload['marker'] == 'module_name':
             context = self.get_context(username)
             module = self.session.query(Module).filter(Module.module_id == context.stored_id).first()
             module.module_name = payload['payload']['chosen'][0]
             self.session.commit()
-            return request_gather(1, 'create_game', 'module_flavour', 'Введите описание модуля:')
+            return request_gather(1, 'create_game', 'module_flavour', locale['game']['type_module_flavour'])
         if payload['marker'] == 'module_flavour':
             context = self.get_context(username)
             module = self.session.query(Module).filter(Module.module_id == context.stored_id).first()
@@ -159,11 +160,11 @@ class GameEngine:
             context.finish_marker = ''
             context.stored_id = module.module_id  # active game stored here
             self.session.commit()
-            return request_send([username], 'game', 'first_entrance', 'Вы в игре.')
+            return request_send([username], 'game', 'first_entrance', locale['game']['in_game'])
 
     def create_setting(self, username, payload):
         if payload['marker'] == '':
-            return request_gather(1, 'create_setting', 'name_chosen', 'Выберите имя для сеттинга')
+            return request_gather(1, 'create_setting', 'name_chosen', locale['game']['type_setting_name'])
         if payload['marker'] == 'name_chosen':
             context = self.get_context(username)
             setting = Setting(setting_id=username + str(int(time.time())), setting_name=payload['payload']['chosen'][0],
@@ -171,7 +172,7 @@ class GameEngine:
             context.stored_id = setting.setting_id
             self.session.add(setting)
             self.session.commit()
-            return request_gather(1, 'create_setting', 'flavour_chosen', 'Пришлите описание сеттинга:')
+            return request_gather(1, 'create_setting', 'flavour_chosen', locale['game']['type_setting_flavour'])
         if payload['marker'] == 'flavour_chosen':
             context = self.get_context(username)
             setting = self.session.query(Setting).filter(Setting.setting_id == context.stored_id).first()
@@ -194,24 +195,10 @@ class GameEngine:
                 self.session.commit()
                 return self.create_character(username, __EMPTY_PAYLOAD__)
             if 'chosen' not in payload['payload']:
-                return request_gather(1, 'game', 'player',
-                                      'Все что вы напишете будет действием персонажа. '
-                                      'Если вам надо написать другим игрокам в общий чат используйте команду /chat '
-                                      '(можно сразу "/chat текст сообщения".\nВыйти из игры можно по команде /leave\n'
-                                      'Команды игрока:\n/me - Показывает вашего персонажа\n'
-                                      '/chars - показывает список персонажей в сцене с вами\n'
-                                      '/remind - Показывает описание сцены и последние три действия')
+                return request_gather(1, 'game', 'player', locale['game']['player_commands'])
         if payload['marker'] == 'dm':
             # this is a player action or DM flavourtext
-            return request_gather(1, 'game', 'player',
-                                  'Все что вы напишете будет описанием сцены. '
-                                  'Если вам надо написать другим игрокам в общий чат используйте команду /chat '
-                                  '(можно сразу "/chat текст сообщения".\nВыйти из игры можно по команде /leave\n'
-                                  'Команды мастера игры включают:\n/scene - Управление сценами\n'
-                                  '/chars - Управление персонажами (PC и NPC)\n'
-                                  '/request - запрашивает бросок навыка\n'
-                                  '/pause - Ставит отображение лога действий на паузу и возвращает наза\n'
-                                  '/turns - Включает пораундовый режим')
+            return request_gather(1, 'game', 'player', locale['game']['gm_commands'])
 
     def get_current_setting(self, username):
         return self.session.query(Setting).join(Module, Module.setting_id == Setting.setting_id).filter(
@@ -223,29 +210,34 @@ class GameEngine:
 
     def create_character(self, username, payload):
         if payload['marker'] == '':  # start creation
-            return request_gather(1, 'create_character', 'name', 'Введите имя персонажа (как оно будет отображаться):')
+            return request_gather(1, 'create_character', 'name', locale['game']['type_character_name'])
         if payload['marker'] == 'name':
             char = Character(setting_id=self.get_current_setting(username).setting_id, owner=username,
                              name=payload['payload']['chosen'][0], display_name='', known=False,
-                             reference='', flavourtext='', maneuver_list='', experience=600)
+                             reference='', flavourtext='', experience=600)
             context = self.get_context(username)
             context.stored_id = char.name
             self.session.add(char)
             self.session.commit()
-            return request_gather(1, 'create_character', 'display_name',
-                                  'Введите имя, которое будет отображаться пока персонажа не знают '
-                                  '(например, "Человек в Шляпе"):')
-        if payload['marker'] == 'display_name'
-            char = self.get_character(username)
+            return request_gather(1, 'create_character', 'display_name', locale['game']['type_character_d_name'])
+        char = self.get_character(username)
+        if payload['marker'] == 'display_name':
             char.display_name = payload['payload']['chosen'][0]
-            return request_gather(1, 'create_character', 'reference',
-                                  'Пришлите ссылки на референсы персонажа (или на рисунок)\n'
-                                  'Использование файлов будет сделано позже')
+            self.session.commit()
+            return request_gather(1, 'create_character', 'reference', locale['game']['type_character_reference'])
         if payload['marker'] == 'reference':
-            char = self.get_character(username)
             char.reference = payload['payload']['chosen'][0]
-            return request_gather(1, 'create_character', 'flavour',
-                                  'Введите описание персонажа:')
+            self.session.commit()
+            return request_gather(1, 'create_character', 'flavour', locale['game']['type_character_flavour'])
+        if payload['flavour'] == 'flavour':
+            char.flavourtext = payload['payload']['chosen'][0]
+            self.session.commit()
+            # from this point on SHIT HITS THE FAN.
+            # 1) parms
+            # 2) influence
+            # 3) lists
+            # 4)
+
         # add something like Character Extra Details for spellbook \ maneuver book
 
     # INTERFACE FUNCTIONS

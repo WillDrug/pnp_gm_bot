@@ -1,4 +1,4 @@
-from GameModel import BaseCharacterParm, BaseCharacterInfluence
+from GameModel import BaseCharacterParm, BaseCharacterInfluence, BaseCharacterManeuver, BaseCharacterResource
 from sqlalchemy import create_engine, MetaData
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import Column, Integer, String, Boolean, ForeignKey
@@ -58,7 +58,6 @@ class Character(Base):
     known = Column(Boolean)
     reference = Column(String)
     flavourtext = Column(String)
-    maneuver_list = Column(String)
     experience = Column(Integer)
 
     def __repr__(self):
@@ -66,10 +65,29 @@ class Character(Base):
             self.char_id, self.username, self.reference, self.flavourtext
         )
 
+    def get_influences(self, apply_to):
+        influence = 0
+        for i in self.influence_list:
+            for q in self.influence_list[i]:
+                if q.apply_to == apply_to:
+                    influence += q.apply_num
+        return influence
+
+    def initiative_bonus(self):
+        bonus = 0
+        for i in self.parms['Stats']:
+            if i.name == 'Скорость' or i.name == 'Ловкость':
+                influences = self.get_influences('Stats/'+i.name)
+                bonus += i.calculate_bonus(influences)
+
     def populate(self, session):
+        self.resource_list = [Core]
+        self.recourses = dict()
+        for q in self.resource_list:
+            self.recourses[q.__referencename__] = self.load_parm(q, session)
         self.actions = dict()
         self.parms = dict()
-        self.plugins = [CoreParms, Stats, Combat, Magic, Secondary, Tertiary]
+        self.plugins = [Stats, Combat, Magic, Secondary, Tertiary]
         for q in plugins:
             self.parms[q.__referencename__] = self.load_parm(q, session)
             self.actions[q.__referencename__] = []
@@ -78,11 +96,15 @@ class Character(Base):
         self.influences = dict()
         self.influence_actions = dict()
         self.influence_list = [Feats, Items]
-        for q in self.influences:
+        for q in self.influence_list:
             self.influences[q.__referencename__] = self.load_parm(q, session)
-            self.influences[q.__referencename__] = []
+            self.actions[q.__referencename__] = []
             self.append_influence(self.influence_actions[q.__referencename__], q.__referencename__)
 
+        self.lists = dict()
+        self.lists_list = [Spell, Maneuver]
+        for q in self.lists_list:
+            self.lists[q.__referencename__] = self.load_parm(q, session)
         return True
 
     def load_parm(self, parm, session):
@@ -98,15 +120,12 @@ class Character(Base):
         for q in parm:
             self.influences[declared_name].append(parm)
 
-class CharacterExtraDetails(Base):
-    __tablename__ = 'extradetails'
 
-
-class CoreParms(Base, BaseCharacterParm):
+class Core(Base, BaseCharacterResource):
     __tablename__ = 'coreparms'
 
     __basedice__ = 100
-    __parmlist__ = 'Здоровье,Инициатива'
+    __parmlist__ = 'Здоровье'
     __cost__ = 99999 #lol kek
     __referencename__ = 'Core'
 
@@ -157,7 +176,7 @@ class Magic(Base, BaseCharacterParm):
     __tablename__ = 'magic'
 
     __basedice__ = 100
-    __parmlist__ = 'Атака,Защита,Аккумуляция'
+    __parmlist__ = 'Атака,Защита,Воля'
     __cost__ = 5
     __referencename__ = 'Magic'
 
@@ -184,9 +203,7 @@ class Feats(Base, BaseCharacterInfluence):
 
 class Items(Base, BaseCharacterInfluence):
     __tablename__ = 'items'
-    def populate(self):
-        super()
-        self.__referencename__ = 'Items'
+    __referencename__ = 'Items'
 
 class Scene(Base):
     __tablename__ = 'scene'
