@@ -6,6 +6,8 @@ class BaseCharacterParm:
     __parmlist__ = 'dynamic'
     __cost__ = 0.1  # each point gives +10
     __referencename__ = 'Parm'
+    __flavour__ = 'flavourtext'
+    __startvalue__ = 0
 
     char_id = Column(String, primary_key=True)
     parm_name = Column(String, primary_key=True)
@@ -39,7 +41,7 @@ class BaseCharacterInfluence:
             self.__class__, self.char_id, self.name, self.apply_to, self.apply_num, self.flavourtext
         )
 
-class BaseCharacterManeuver:
+class BaseCharacterList:
     __referencename__ = 'List'
     __cost__ = 40
 

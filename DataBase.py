@@ -1,8 +1,9 @@
-from GameModel import BaseCharacterParm, BaseCharacterInfluence, BaseCharacterManeuver, BaseCharacterResource
+from local import lang
+from GameModel import BaseCharacterParm, BaseCharacterInfluence, BaseCharacterList, BaseCharacterResource
 from sqlalchemy import create_engine, MetaData
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import Column, Integer, String, Boolean, ForeignKey
-
+locale = lang['ru']
 __DBNAME__ = 'sqlite:///pnp_gm_bot.sqlite'
 Base = declarative_base() #this binds metadata, fuck you.
 
@@ -50,10 +51,10 @@ class ModulePlayer(Base):
 
 class Character(Base):
     __tablename__ = 'character'
-
-    setting_id = Column(String, primary_key=True)
-    owner = Column(String, primary_key=True)
-    name = Column(String, primary_key=True)
+    char_id = Column(String, primary_key=True)
+    setting_id = Column(String)
+    owner = Column(String)
+    name = Column(String)
     display_name = Column(String)
     known = Column(Boolean)
     reference = Column(String)
@@ -87,7 +88,7 @@ class Character(Base):
             self.recourses[q.__referencename__] = self.load_parm(q, session)
         self.actions = dict()
         self.parms = dict()
-        self.plugins = [Stats, Combat, Magic, Secondary, Tertiary]
+        self.parm_list = [Stats, Combat, Magic, Secondary, Tertiary]
         for q in plugins:
             self.parms[q.__referencename__] = self.load_parm(q, session)
             self.actions[q.__referencename__] = []
@@ -124,13 +125,9 @@ class Character(Base):
 class Core(Base, BaseCharacterResource):
     __tablename__ = 'coreparms'
 
-    __basedice__ = 100
-    __parmlist__ = 'Здоровье'
-    __cost__ = 99999 #lol kek
+    __parmlist__ = 'Здоровье,Деньги'
     __referencename__ = 'Core'
 
-    def calculate_bonus(self, influence):
-        return (self.parm_value+influence)*10
 
 
 class Stats(Base, BaseCharacterParm):
@@ -140,6 +137,8 @@ class Stats(Base, BaseCharacterParm):
     __parmlist__ = 'Сила,Выносливость,Ловкость,Скорость,Интеллект,Внимание,Мудрость,Харизма'
     __cost__ = 25  # each point costs 10
     __referencename__ = 'Stats'
+    __flavour__ = locale['database']['stat_flavour']
+    __startvalue__ = 5
 
 
     def calculate_bonus(self, influence):
@@ -170,6 +169,7 @@ class Combat(Base, BaseCharacterParm):
     __parmlist__ = 'Атака,Блок,Уворот,Стойкость'
     __cost__ = 5
     __referencename__ = 'Combat'
+    __flavour__ = locale['database']['combat_flavour']
 
 
 class Magic(Base, BaseCharacterParm):
@@ -179,6 +179,7 @@ class Magic(Base, BaseCharacterParm):
     __parmlist__ = 'Атака,Защита,Воля'
     __cost__ = 5
     __referencename__ = 'Magic'
+    __flavour__ = locale['database']['magic_flavour']
 
 class Secondary(Base, BaseCharacterParm):
     __tablename__ = 'secondary'
@@ -187,6 +188,7 @@ class Secondary(Base, BaseCharacterParm):
     __parmlist__ = 'Акробатика,Атлетика,Оккультизм,Внимание,Социал,Стиль'
     __cost__ = 1
     __referencename__ = 'Secondary'
+    __flavour__ = locale['database']['secondary_flavour']
 
 
 class Tertiary(Base, BaseCharacterParm):
@@ -196,6 +198,7 @@ class Tertiary(Base, BaseCharacterParm):
     __parmlist__ = 'dynamic'
     __cost__ = 0.1
     __referencename__ = 'Tertiary'
+    __flavour__ = locale['database']['tertiary_flavour']
 
 class Feats(Base, BaseCharacterInfluence):
     __tablename__ = 'feats'
@@ -236,8 +239,7 @@ class GameContext(Base):
     __tablename__ = 'gcontext'
 
     username = Column(String, primary_key=True)
-    context_function = Column(String)
-    context_marker = Column(String)
+    context_function = Column(String, primary_key=True)
     on_finish = Column(String)
     finish_marker = Column(String)
     stored_id = Column(String)

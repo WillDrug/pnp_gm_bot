@@ -150,13 +150,13 @@ class GMBot:
             finish_payload = dict()
             finish_payload['marker'] = context.marker
             finish_payload['payload'] = return_payload
+            finish_payload['payload']['original'] = request_payload
             self.game_engine.session.delete(context)
             self.game_engine.session.commit()
             if finish != '':
                 next_action = eval('self.game_engine.' + finish)(username, finish_payload)
-                return self.register_action(username, next_action)
-            else:
-                return True
+                self.register_action(username, next_action)
+            return True
 
     def gather(self, msg, context):
         request_payload = json.loads(context.request_payload)
@@ -187,6 +187,7 @@ class GMBot:
             finish_payload = dict()
             finish_payload['marker'] = context.marker
             finish_payload['payload'] = return_payload
+            finish_payload['payload']['original'] = request_payload
             try:
                 self.core.editMessageReplyMarkup((chat_id, return_payload['msg_id']), markup)
             except TelegramError:
@@ -267,6 +268,7 @@ class GMBot:
             payload = dict()
             payload['marker'] = context.marker
             payload['payload'] = return_payload
+            payload['payload']['original'] = request_payload
             username = context.username
             finish = context.on_finish
             self.game_engine.session.delete(context)
