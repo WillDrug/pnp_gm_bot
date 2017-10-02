@@ -26,7 +26,6 @@ def gameindex(request):
         owning = Setting.objects.filter(owner=request.user).all()
         owning_full = dict()
         for i in owning:
-            print(i)
             if i.name not in owning_full.keys():
                 owning_full[i.name] = dict()
             games_in_setting = Game.objects.filter(setting=i).all()
@@ -53,6 +52,7 @@ def new_game(request):
                 setting.owner = request.user
                 setting.save()
         elif request.POST['act'] == 'game':
+            form = NewGameForm(request.POST)
             if form.is_valid():
                 form.save()
                 return redirect('index')
@@ -62,7 +62,7 @@ def new_game(request):
         title = 'Создайте Сеттинг'
         action = 'setting'
     else:
-        form = NewGameForm(None, user=request.user)
+        form = NewGameForm(None)#, user=request.user)
         title = 'Создайте Игру'
         action = 'game'
 

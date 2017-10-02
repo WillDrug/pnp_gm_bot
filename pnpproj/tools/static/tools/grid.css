@@ -1,6 +1,6 @@
-body {
-    background: white url("images/bg.jpg") no-repeat right bottom;
-}
+/*body {
+    background: white url("images/bg.jpg");
+}*/
 
 /* game menu start */
 .menu .accordion-heading {  position: relative; }

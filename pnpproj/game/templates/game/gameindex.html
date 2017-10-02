@@ -5,6 +5,12 @@
 	  <div class="row">
           <div class="col-md-2" id="left_pane">
               {% if menu %}
+              {% for key, value in owning.items %}
+                {{ key }}: <BR>
+                {% for k, v in value.items %}
+                    {{v}}<br>
+                {% endfor %}
+              {% endfor %}
                     <script>
                         $(document).ready(function(){
                             $('#newgame').click(function() {

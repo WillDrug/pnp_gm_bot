@@ -17,18 +17,29 @@ class Setting(models.Model):
     name = models.CharField(max_length=20)
     flavour = models.CharField(max_length=250)
 
+    def __str__(self):
+        return self.name
+
+    def __unicode__(self):
+        return self.name
+
 
 class Game(models.Model):
     setting = models.ForeignKey(Setting, blank=False)
     name = models.CharField(max_length=20)
     flavour = models.CharField(max_length=250)
 
+    def __str__(self):
+        return self.name
+
+    def __unicode__(self):
+        return self.name
+
 
 class Players(models.Model):
     game = models.ForeignKey(Game)
     user = models.ForeignKey(User)
     last_seen = models.DateTimeField()
-
 
 class Character(models.Model):
     owner = models.ForeignKey(User)
@@ -39,6 +50,12 @@ class Character(models.Model):
     flavour = models.CharField(max_length=250)
     experience = models.IntegerField()
     levelup = models.BooleanField(default=True)
+
+    def __str__(self):
+        return self.name
+
+    def __unicode__(self):
+        return self.name
 
 class Parm:
     __cost__ = 1
@@ -54,6 +71,12 @@ class Parm:
             parm_validator(self.__class__, value)
 
     name = models.CharField(max_length=15, validators=[validate])
+
+    def __str__(self):
+        return self.name
+
+    def __unicode__(self):
+        return self.name
 
 class Stats(models.Model, Parm):
     __cost__ = 25

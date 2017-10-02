@@ -1,14 +1,14 @@
 <div id="new_game">
     <p>{{ title }}</p>
-    {% if action == 'game' %}
-    <a id="newsetting">Создать Сеттинг</a>
-    {% endif %}
     <form method="POST" id="newgameform" action="{% url 'new_game' %}">
     {% csrf_token %}
     {{ form.as_p }}
     <input type="hidden" name="act" value="{{ action }}"/>
     <button type="submit" class="save btn btn-default" id="newgamesave">Save</button>
     </form>
+    {% if action == 'game' %}
+    <a id="newsetting">Создать Сеттинг</a>
+    {% else %}
     <script>
         $('#newgameform').submit(function() { // catch the form's submit event
         $.ajax({ // create an AJAX call...
@@ -25,4 +25,5 @@
              $('#new_game').parent().load("{% url 'new_game' %}?setting");
         });
     </script>
+    {% endif %}
 </div>

@@ -16,14 +16,17 @@ class NewGameForm(forms.ModelForm):
         model = Game
         fields = ('setting', 'name', 'flavour')
 
-    setting = forms.ModelChoiceField(queryset=Setting.objects.all())
+    setting = forms.ModelChoiceField(queryset=Setting.objects.all(), empty_label=None)
     name = forms.CharField(widget=forms.TextInput(), label='Название Игры')
     flavour = forms.CharField(widget=forms.Textarea(), label='Описание Игры')
 
+    """
     def __init__(self, *args, **kwargs):
         user = kwargs.pop('user', None)
         super(NewGameForm, self).__init__(*args, **kwargs)
         if user:
             self.fields['setting'].queryset = Setting.objects.filter(owner=user)
-            self.fields['setting'].empty_label=None
-            self.fields['setting'].widget.choices = self.fields['setting'].choices
+
+            #self.fields['setting'].empty_label = None
+            #self.fields['setting'].widget.choices = self.fields['setting'].choices
+    """
