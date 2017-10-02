@@ -8,6 +8,11 @@
     </form>
     {% if action == 'game' %}
     <a id="newsetting">Создать Сеттинг</a>
+    <script>
+        $('#newsetting').bind("click", function() {
+             $('#new_game').parent().load("{% url 'new_game' %}?setting");
+        });
+    </script>
     {% else %}
     <script>
         $('#newgameform').submit(function() { // catch the form's submit event
@@ -21,9 +26,7 @@
         });
         return false; // cancel original event to prevent form submitting
         });
-        $('#newsetting').bind("click", function() {
-             $('#new_game').parent().load("{% url 'new_game' %}?setting");
-        });
+
     </script>
     {% endif %}
 </div>

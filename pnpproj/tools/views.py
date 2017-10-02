@@ -19,7 +19,6 @@ def login_view(request):
             return redirect(reverse('index'))
         else: #trying to log in
             user = authenticate(username=username, password=password)
-            print(user)
             if user is not None:
                 login(request, user)
                 return redirect(reverse('index'))

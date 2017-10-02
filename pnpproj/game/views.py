@@ -4,7 +4,7 @@ from django.contrib.auth.models import User
 from game.models import Game, Players, Setting
 from game.forms import NewSettingForm, NewGameForm
 from django.contrib.auth.decorators import login_required
-
+from django.urls import reverse
 
 # Create your views here.
 
@@ -20,21 +20,25 @@ def gameindex(request):
         playing_full = dict()
         for i in playing:
             if i.game.setting.name not in playing_full.keys():
-                playing_full[i.game.setting.name] = dict()
-            playing_full[i.game.setting.name]['name'] = i.game.name
-            playing_full[i.game.setting.name]['key'] = i.game.pk
+                playing_full[i.game.setting.name] = list()
+            playing_full[i.game.setting.name].append({'name': i.game.name,
+                                                    'key': i.game.invite})
         owning = Setting.objects.filter(owner=request.user).all()
         owning_full = dict()
         for i in owning:
             if i.name not in owning_full.keys():
-                owning_full[i.name] = dict()
+                owning_full[i.name] = list()
             games_in_setting = Game.objects.filter(setting=i).all()
             for q in games_in_setting:
-                owning_full[i.name]['name'] = q.name
-                owning_full[i.name]['key'] = q.pk
+                owning_full[i.name].append({'name': q.name,
+                                            'key': q.invite})
         return render(request, 'game/gameindex.html', {'menu': True, 'playing': playing_full, 'owning': owning_full})
     else:
-        game = Game.objects.filter(name=request.user.first_name).first()
+        game = Game.objects.filter(invite=request.user.first_name).first()
+        if game is None:
+            request.user.first_name = 'menu'
+            request.user.save()
+            return redirect(reverse('game_index'))
         if game.game_master == request.user:
             role = 'gm'
         else:
@@ -55,7 +59,9 @@ def new_game(request):
             form = NewGameForm(request.POST)
             if form.is_valid():
                 form.save()
-                return redirect('index')
+                request.user.first_name = form.fields['invite']
+                request.user.save()
+                return redirect(reverse('game_index'))
     settings = Setting.objects.filter(owner=request.user).all()
     if settings.__len__() == 0 or 'setting' in request.GET.keys():
         form = NewSettingForm(None)

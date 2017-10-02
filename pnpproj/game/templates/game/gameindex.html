@@ -6,10 +6,11 @@
           <div class="col-md-2" id="left_pane">
               {% if menu %}
               {% for key, value in owning.items %}
-                {{ key }}: <BR>
-                {% for k, v in value.items %}
-                    {{v}}<br>
+                Сеттинг {{ key }}: <BR>
+                {% for i in value %}
+              &nbsp;&nbsp;&nbsp;&nbsp;<a href="{{ i.key }}">{{i.name}}</a><br>
                 {% endfor %}
+
               {% endfor %}
                     <script>
                         $(document).ready(function(){

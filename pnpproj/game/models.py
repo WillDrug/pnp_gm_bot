@@ -28,6 +28,7 @@ class Game(models.Model):
     setting = models.ForeignKey(Setting, blank=False)
     name = models.CharField(max_length=20)
     flavour = models.CharField(max_length=250)
+    invite = models.CharField(max_length=16, unique=True)
 
     def __str__(self):
         return self.name

@@ -2,6 +2,8 @@ from django import forms
 from django.contrib.auth.models import User
 from django.forms.utils import ErrorList
 from game.models import Game, Setting
+import hashlib, base64, time
+
 
 class NewSettingForm(forms.ModelForm):
     class Meta:
@@ -14,19 +16,20 @@ class NewSettingForm(forms.ModelForm):
 class NewGameForm(forms.ModelForm):
     class Meta:
         model = Game
-        fields = ('setting', 'name', 'flavour')
+        fields = ('setting', 'name', 'flavour', 'invite')
 
     setting = forms.ModelChoiceField(queryset=Setting.objects.all(), empty_label=None)
     name = forms.CharField(widget=forms.TextInput(), label='Название Игры')
     flavour = forms.CharField(widget=forms.Textarea(), label='Описание Игры')
+    invite = forms.CharField(widget=forms.HiddenInput(), label='invite_link')
 
-    """
     def __init__(self, *args, **kwargs):
         user = kwargs.pop('user', None)
         super(NewGameForm, self).__init__(*args, **kwargs)
         if user:
             self.fields['setting'].queryset = Setting.objects.filter(owner=user)
-
-            #self.fields['setting'].empty_label = None
-            #self.fields['setting'].widget.choices = self.fields['setting'].choices
-    """
+        hasher = hashlib.sha1(user.__str__().encode('utf-8')+str(time.time()).encode('utf-8'))
+        self.fields['invite'] = forms.CharField(
+            initial=base64.urlsafe_b64encode(hasher.digest()[0:10]).decode('utf-8'),
+            widget=forms.HiddenInput()
+        )
