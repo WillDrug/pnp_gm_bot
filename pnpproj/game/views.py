@@ -9,7 +9,8 @@ from django.urls import reverse
 # Create your views here.
 
 @login_required(redirect_field_name='index')
-def gameindex(request):
+def gameindex(request, **kwargs):
+    print(kwargs['gamehash'])
     # gather user games
     assert isinstance(request.user, User)
     if 'menu' in request.GET.keys() or request.user.first_name == '':

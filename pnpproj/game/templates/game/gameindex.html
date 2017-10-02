@@ -8,7 +8,7 @@
               {% for key, value in owning.items %}
                 Сеттинг {{ key }}: <BR>
                 {% for i in value %}
-              &nbsp;&nbsp;&nbsp;&nbsp;<a href="{{ i.key }}">{{i.name}}</a><br>
+              &nbsp;&nbsp;&nbsp;&nbsp;<a href="/game/join/{{ i.key }}">{{i.name}}</a><br>
                 {% endfor %}
 
               {% endfor %}
