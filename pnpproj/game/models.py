@@ -19,7 +19,7 @@ class Setting(models.Model):
 
 
 class Game(models.Model):
-    setting = models.ForeignKey(Setting)
+    setting = models.ForeignKey(Setting, blank=False)
     name = models.CharField(max_length=20)
     flavour = models.CharField(max_length=250)
 

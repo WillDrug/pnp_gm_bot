@@ -24,4 +24,6 @@ class NewGameForm(forms.ModelForm):
         user = kwargs.pop('user', None)
         super(NewGameForm, self).__init__(*args, **kwargs)
         if user:
-            self.fields['setting'].queryset = Setting.objects.filter(owner=user).all()
+            self.fields['setting'].queryset = Setting.objects.filter(owner=user)
+            self.fields['setting'].empty_label=None
+            self.fields['setting'].widget.choices = self.fields['setting'].choices

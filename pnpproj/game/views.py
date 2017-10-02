@@ -58,11 +58,11 @@ def new_game(request):
                 return redirect('index')
     settings = Setting.objects.filter(owner=request.user).all()
     if settings.__len__() == 0 or 'setting' in request.GET.keys():
-        form = NewSettingForm(request)
+        form = NewSettingForm(None)
         title = 'Создайте Сеттинг'
         action = 'setting'
     else:
-        form = NewGameForm(request, user=request.user)
+        form = NewGameForm(None, user=request.user)
         title = 'Создайте Игру'
         action = 'game'
 
