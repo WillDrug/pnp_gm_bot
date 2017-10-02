@@ -4,6 +4,6 @@ from django.conf.urls import include, url
 from . import views
 
 urlpatterns = [
-    url(r'^/', views.game),
-    url(r'^sometshit/$', views.game),
+    url(r'gameindex/?', views.gameindex, name='game_index'),
+    url(r'newgame/?', views.new_game, name='new_game')
 ]

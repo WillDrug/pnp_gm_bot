@@ -1,0 +1,28 @@
+<div id="new_game">
+    <p>{{ title }}</p>
+    {% if action == 'game' %}
+    <a id="newsetting">Создать Сеттинг</a>
+    {% endif %}
+    <form method="POST" id="newgameform" action="{% url 'new_game' %}">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <input type="hidden" name="act" value="{{ action }}"/>
+    <button type="submit" class="save btn btn-default" id="newgamesave">Save</button>
+    </form>
+    <script>
+        $('#newgameform').submit(function() { // catch the form's submit event
+        $.ajax({ // create an AJAX call...
+                data: $(this).serialize(), // get the form data
+                type: $(this).attr('method'), // GET or POST
+                url: $(this).attr('action'), // the file to call
+                success: function(response) { // on success..
+                    $('#new_game').parent().html(response); // update the DIV
+                }
+        });
+        return false; // cancel original event to prevent form submitting
+        });
+        $('#newsetting').bind("click", function() {
+             $('#new_game').parent().load("{% url 'new_game' %}?setting");
+        });
+    </script>
+</div>

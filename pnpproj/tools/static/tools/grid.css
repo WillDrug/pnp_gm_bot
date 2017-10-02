@@ -1,0 +1,24 @@
+body {
+    background: white url("images/bg.jpg") no-repeat right bottom;
+}
+
+/* game menu start */
+.menu .accordion-heading {  position: relative; }
+.menu .accordion-heading .edit {
+    position: absolute;
+    top: 8px;
+    right: 30px;
+}
+.menu .area { border-left: 4px solid #f38787; }
+.menu .equipamento { border-left: 4px solid #65c465; }
+.menu .ponto { border-left: 4px solid #98b3fa; }
+.menu .collapse.in { overflow: visible; }
+
+
+.accordion{margin-bottom:20px;}
+.accordion-group{margin-bottom:2px;border:1px solid #e5e5e5;-webkit-border-radius:4px;-moz-border-radius:4px;border-radius:4px;}
+.accordion-heading{border-bottom:0;}
+.accordion-heading .accordion-toggle{display:block;padding:8px 15px;}
+.accordion-toggle{cursor:pointer;}
+.accordion-inner{padding:9px 15px;border-top:1px solid #e5e5e5;}
+/* end gamemenu */

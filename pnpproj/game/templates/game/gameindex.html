@@ -1,0 +1,39 @@
+{% extends 'tools/base.html' %}
+{% block content %}
+<body>
+    <div class="container-fluid">
+	  <div class="row">
+          <div class="col-md-2" id="left_pane">
+              {% if menu %}
+                    <script>
+                        $(document).ready(function(){
+                            $('#newgame').click(function() {
+                                    $('#mid_pane').load("{% url 'new_game' %}")
+                                    return false
+                            });
+                        });
+                    </script>
+                    <div class="pull-right">
+                        <a class="btn btn-lg btn-success" id="newgame">
+                        <i class="glyphicon glyphicon-dashboard"></i><span>Создать игру</span></a>
+                    </div>
+              {% else %}
+                character list
+              {% endif %}
+          </div>
+          <div class="col-md-8" id="mid_pane">
+                <span>Game menu</span>
+          </div>
+          <div class="col-md-2" id="right_pane">
+              <span>Chat</span>
+          </div>
+        </div>
+    </div>
+      <div class="row">
+          <div class="col-md-12" id="footer">
+              <span>Footer</span>
+          </div>
+      </div>
+</body>
+
+{% endblock %}
