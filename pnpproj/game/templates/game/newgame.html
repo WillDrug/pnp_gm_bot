@@ -1,3 +1,5 @@
+{% extends 'game/gamemenu.html' %}
+{% block mid %}
 <div id="new_game">
     <p>{{ title }}</p>
     <form method="POST" id="newgameform" action="{% url 'new_game' %}">
@@ -13,20 +15,6 @@
              $('#new_game').parent().load("{% url 'new_game' %}?setting");
         });
     </script>
-    {% else %}
-    <script>
-        $('#newgameform').submit(function() { // catch the form's submit event
-        $.ajax({ // create an AJAX call...
-                data: $(this).serialize(), // get the form data
-                type: $(this).attr('method'), // GET or POST
-                url: $(this).attr('action'), // the file to call
-                success: function(response) { // on success..
-                    $('#new_game').parent().html(response); // update the DIV
-                }
-        });
-        return false; // cancel original event to prevent form submitting
-        });
-
-    </script>
     {% endif %}
 </div>
+{% endblock %}

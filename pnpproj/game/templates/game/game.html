@@ -1,0 +1,15 @@
+{% extends 'game/gameindex.html' %}
+{% block navleft %}
+ <li class="nav-item"><a class="nav-link" href="{% url 'game_index' %}?menu">Выбор Игры</a></li>
+{% endblock %}
+{% block left %}
+Character stuff
+{% endblock %}
+{% block mid %}
+gamelog
+{% endblock %}
+{% block right %}
+1) Players Ingame (activate dat shit with ajax)
+2) GM tools and shit
+3) chat-z
+{% endblock %}

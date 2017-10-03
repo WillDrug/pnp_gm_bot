@@ -1,54 +1,33 @@
 {% extends 'tools/base.html' %}
 {% block content %}
+{% with "left_pane" as leftid %}
+{% with "right_pane" as rightid %}
+{% with "mid_pane" as midid %}
 <body>
     <div class="container-fluid">
 	  <div class="row">
           <div class="col-md-2" id="left_pane">
-              {% if menu %}
-              {% for key, value in owning.items %}
-                Сеттинг {{ key }}: <BR>
-                {% for i in value %}
-              &nbsp;&nbsp;&nbsp;&nbsp;<a href="/game/join/{{ i.key }}">{{i.name}}</a><br>
-                {% endfor %}
-              {% endfor %}
-                    <script>
-                        $(document).ready(function(){
-                            $('#newgame').click(function() {
-                                    $('#mid_pane').load("{% url 'new_game' %}")
-                                    return false
-                            });
-                        });
-                    </script>
-                    <div class="pull-right">
-                        <a class="btn btn-lg btn-success" id="newgame">
-                        <i class="glyphicon glyphicon-dashboard"></i><span>Создать игру</span></a>
-                    </div>
-              {% else %}
-                character list
-              {% endif %}
+              {% block left %}
+              {% endblock %}
           </div>
           <div class="col-md-8" id="mid_pane">
-                {% if character == 'new' %}
-                    <script>
-                        $(document).ready(function(){
-                            $("#mid_pane").load("{% url 'new_char' %}")
-                        });
-                    </script>
+              {% block mid %}
+              {% endblock %}
           </div>
           <div class="col-md-2" id="right_pane">
-              {% if menu %}
-                shit
-              {% else %}
-                chat
-              {% endif %}
+              {% block right %}
+              {% endblock %}
           </div>
         </div>
     </div>
       <div class="row">
           <div class="col-md-12" id="footer">
-              <span>Footer</span>
+              {% block bot %}
+              {% endblock %}
           </div>
       </div>
 </body>
-
+{% endwith %}
+{% endwith %}
+{% endwith %}
 {% endblock %}

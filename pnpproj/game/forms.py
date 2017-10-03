@@ -43,12 +43,3 @@ class NewCharacterForm(forms.ModelForm):
                                    label='Обозначение персонажа пока имя неизвестно '
                                          '(например, "человек в красной шляпе")')
     flavour = forms.CharField(widget=forms.Textarea(), label='Описание Персонажа')
-
-    def __init__(self, *args, **kwargs):
-        user = kwargs.pop('user', None)
-        experience = kwargs.pop('exp', None)
-        super(NewGameForm, self).__init__(*args, **kwargs)
-        if user:
-            self.fields['owner'] = user
-        if experience:
-            self.fields['experience'] = experience  #does this even work? lol

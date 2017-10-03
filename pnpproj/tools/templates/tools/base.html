@@ -15,34 +15,29 @@
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta/js/bootstrap.min.js" integrity="sha384-h0AbiXch4ZDo7tp9hKZ4TsHbi047NrKGLO3SEJAg45jXxnGIfYzk4Si90RDIqNm1" crossorigin="anonymous"></script>
     <title>GameMaster 1.0</title>
 </head>
-{% block navigation %}
-          <div class="col-md-12" id="header">
-           <nav class="navbar navbar-expand-md navbar-light bg-faded">
+
+<div class="col-md-12" id="header">
+ <nav class="navbar navbar-expand-md navbar-light bg-faded">
   <button class="navbar-toggler navbar-toggler-right" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
     <span class="navbar-toggler-icon"></span>
   </button>
-  <a class="navbar-brand" href="#">GameMaster</a>
-
+  <a class="navbar-brand" href="{% url 'index' %}">GameMaster</a>
   <div class="collapse navbar-collapse" id="navbarSupportedContent">
     <ul class="navbar-nav mr-auto">
-      <li class="nav-item active">
-        <a class="nav-link" href="#">Home</a>
-      </li>
-      <li class="nav-item">
-        <a class="nav-link" href="#">Link</a>
-      </li>
-      <li class="nav-item">
-        <a class="nav-link disabled" href="#">Disabled</a>
-      </li>
+        {% block navleft %}
+        {% endblock %}
     </ul>
+
       <ul class="navbar-nav mr-right">
           {% if user.is_authenticated %}
           <li class="nav-item"><a class="nav-link" href="{% url 'logout' %}">Logout</a></li>
           {% endif %}
+          {% block navright %}
+          {% endblock %}
       </ul>
+
   </div>
 </nav>
           </div>
-{% endblock %}
 {% block content %}
 {% endblock %}

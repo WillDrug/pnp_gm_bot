@@ -1,0 +1,8 @@
+{% extends 'game/gameindex.html' %}
+{% block bot %}
+ <form method="POST" action="{% url 'new_char' %}">
+        {% csrf_token %}
+        {{ form }}
+	</form>
+
+{% endblock %}
