@@ -36,11 +36,14 @@ class Game(models.Model):
     def __unicode__(self):
         return self.name
 
+class Languages(models.Model):
+    setting = models.ForeignKey(Setting, blank=False)
+    name = models.CharField(max_length=25)
 
 class Players(models.Model):
     game = models.ForeignKey(Game)
     user = models.ForeignKey(User)
-    last_seen = models.DateTimeField()
+    last_seen = models.DateTimeField(auto_now=True)
 
 class Character(models.Model):
     owner = models.ForeignKey(User)

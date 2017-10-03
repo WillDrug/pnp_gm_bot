@@ -1,7 +1,7 @@
 from django import forms
 from django.contrib.auth.models import User
 from django.forms.utils import ErrorList
-from game.models import Game, Setting
+from game.models import Game, Setting, Character
 import hashlib, base64, time
 
 
@@ -33,3 +33,22 @@ class NewGameForm(forms.ModelForm):
             initial=base64.urlsafe_b64encode(hasher.digest()[0:10]).decode('utf-8'),
             widget=forms.HiddenInput()
         )
+
+class NewCharacterForm(forms.ModelForm):
+    class Meta:
+        model = Character
+        fields = ('name', 'display_name', 'flavour')
+    name = forms.CharField(widget=forms.TextInput(), label='Имя Персонажа')
+    display_name = forms.CharField(widget=forms.TextInput(),
+                                   label='Обозначение персонажа пока имя неизвестно '
+                                         '(например, "человек в красной шляпе")')
+    flavour = forms.CharField(widget=forms.Textarea(), label='Описание Персонажа')
+
+    def __init__(self, *args, **kwargs):
+        user = kwargs.pop('user', None)
+        experience = kwargs.pop('exp', None)
+        super(NewGameForm, self).__init__(*args, **kwargs)
+        if user:
+            self.fields['owner'] = user
+        if experience:
+            self.fields['experience'] = experience  #does this even work? lol

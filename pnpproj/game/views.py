@@ -10,7 +10,6 @@ from django.urls import reverse
 
 @login_required(redirect_field_name='index')
 def gameindex(request, **kwargs):
-    print(kwargs['gamehash'])
     # gather user games
     assert isinstance(request.user, User)
     if 'menu' in request.GET.keys() or request.user.first_name == '':
@@ -40,12 +39,16 @@ def gameindex(request, **kwargs):
             request.user.first_name = 'menu'
             request.user.save()
             return redirect(reverse('game_index'))
-        if game.game_master == request.user:
+        if game.setting.owner == request.user:
             role = 'gm'
         else:
             role = 'player'
+            player = Players.objects.filter(game=game).filter(user=request.user)
+            if player is None:
+                player = Player(user=request.user, game=game, last_seen=time.time())
         characters = Character.objects.filter(owner=request.user).filter(game=game).all()
-        return render(request, 'game/gameindex.html', {'game': game, 'characters': characters})
+        return render(request, 'game/gameindex.html',
+                      dict(game=game, role=role, characters=characters if characters is not None else 'new'))
 
 @login_required(redirect_field_name='index')
 def new_game(request):
@@ -74,3 +77,16 @@ def new_game(request):
         action = 'game'
 
     return render(request, 'game/newgame.html', {'form': form, 'title': title, 'action': action})
+
+@login_required(redirect_field_name='index')
+def switch_game(request, **kwargs):
+    try:
+        gamehash = kwargs.pop('gamehash')
+    except KeyError:
+        return redirect(reverse('index'))
+    request.user.first_name = gamehash
+    request.user.save()
+    return redirect(reverse('game_index'))
+
+@login_required(redirect_field_name='index')
+def new_character(request):

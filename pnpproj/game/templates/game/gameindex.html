@@ -10,7 +10,6 @@
                 {% for i in value %}
               &nbsp;&nbsp;&nbsp;&nbsp;<a href="/game/join/{{ i.key }}">{{i.name}}</a><br>
                 {% endfor %}
-
               {% endfor %}
                     <script>
                         $(document).ready(function(){
@@ -29,10 +28,19 @@
               {% endif %}
           </div>
           <div class="col-md-8" id="mid_pane">
-                <span>Game menu</span>
+                {% if character == 'new' %}
+                    <script>
+                        $(document).ready(function(){
+                            $("#mid_pane").load("{% url 'new_char' %}")
+                        });
+                    </script>
           </div>
           <div class="col-md-2" id="right_pane">
-              <span>Chat</span>
+              {% if menu %}
+                shit
+              {% else %}
+                chat
+              {% endif %}
           </div>
         </div>
     </div>
