@@ -1,7 +1,7 @@
 from django.shortcuts import render, redirect
 from django.http import HttpRequest, HttpResponse
 from django.contrib.auth.models import User
-from game.models import Game, Players, Setting, Character
+from game.models import Game, Players, Setting, Character, Stats, Combat, Magic, Secondary, Tertiary, Inventory
 from game.forms import NewSettingForm, NewGameForm, NewCharacterForm
 from django.contrib.auth.decorators import login_required
 from django.urls import reverse
@@ -81,16 +81,55 @@ def switch_game(request, **kwargs):
     request.user.save()
     return redirect(reverse('game_index'))
 
-@login_required(redirect_field_name='ndex')
+@login_required(redirect_field_name='index')
 def new_character(request):
-    if request.method == 'POST':
-        char = form.save()
-        char.owner = request.user
-        char.experience = 600
-        return True #here will be form shit
+    # check active game
+    game = Game.objects.filter(invite=request.user.first_name)
+    if game is None:
+        return redirect(reverse('game_index'))
+
+    # check character list with levelup=True
+    char = Character.objects.filter(owner=request.user).filter(game=game).filter(levelup=True).first()
+    stats = Stats.objects.filter(char=char).first()
+    combat = Combat.objects.filter(char=char).first()
+    magic = Magic.objects.filter(char=char).first()
+    secondary = Secondary.objects.filter(char=char).first()
+    tertiary = Tertiary.objects.filter(char=char).first()
+    feats = Feats.objects.filter(char=char).first()
+    inventory = Inventory.objects.filter(char=char).first()
+
+    if char is None:
+        redirect(reverse('game_index')) #that's a possible infinite loop, LOOOOOL
+
+    parms = {
+        'Основное': char,  # core
+        'Статы': {},     # parm
+        'Бой': {},       # parm
+        'Магия': {},     # parm
+        'Вторичные': {}, # parm
+        'Третичные': {}, # parm
+        'Таланты': {},   # influence item
+        'Инвентарь': {}, # influence item
+    }
+    if 'action' not in request.GET.keys():
+        action = 'core'
+        exp = ''
     else:
-        form = NewCharacterForm()
-        return render(request, 'game/newchar.html', {'form': form})
+        action = request.GET['action']
+
+    if action == 'core':
+        char = Character.objects.filter(owner=request.user).filter(game=request.first_name).all()
+        if request.method == 'POST':
+            form = NewCharacterForm(request.POST)
+            if form.is_valid:
+                char = form.save()
+                char.owner = request.user
+                char.experience = 600
+                action = 'stats'
+        else:
+            form = NewCharacterForm()
+
+    return render(request, 'game/newchar.html', {'form': form, 'parms': parms, 'action': action, 'exp': exp})
 
 @login_required(redirect_field_name='index')
 def game(request):
@@ -109,7 +148,9 @@ def game(request):
             player.save()
     characters = Character.objects.filter(owner=request.user).filter(game=game).all()
     if characters.__len__() == 0 and role == 'player':
-        return new_character(request)
+        newchar = Character(owner=request.user, game=Game.objects.filter(invite=request.user.first_name).first().first())
+        newchar.save()
+        return redirect(reverse('new_char'))
     else:
         return render(request, 'game/game.html',
                   dict(game=game, role=role, characters=characters))

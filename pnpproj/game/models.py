@@ -177,7 +177,19 @@ class Combat(models.Model, Parm):
         }
     }
 
+class Magic(model.Model, Parm):
+    __cost__ = 10
+    __restrictions__ = {
+        'Атака': {
 
+        },
+        'Защита': {
+
+        },
+        '': {
+
+        }
+    }
 class Hidden(models.Model, Parm):
     __cost__ = 0
     __restrictions__ = {

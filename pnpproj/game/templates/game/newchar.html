@@ -1,8 +1,12 @@
 {% extends 'game/gameindex.html' %}
-{% block bot %}
+{% block left %}
+Персонаж:
+{{ character.name }}
+{% endblock %}
+{% block mid %}
  <form method="POST" action="{% url 'new_char' %}">
         {% csrf_token %}
         {{ form }}
-	</form>
+ </form>
 
 {% endblock %}
