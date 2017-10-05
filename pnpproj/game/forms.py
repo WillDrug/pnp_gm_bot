@@ -1,8 +1,9 @@
+import base64
+import hashlib
+import time
+
 from django import forms
-from django.contrib.auth.models import User
-from django.forms.utils import ErrorList
 from game.models import Game, Setting, Character
-import hashlib, base64, time
 
 
 class NewSettingForm(forms.ModelForm):
@@ -43,3 +44,4 @@ class NewCharacterForm(forms.ModelForm):
                                    label='Обозначение персонажа пока имя неизвестно '
                                          '(например, "человек в красной шляпе")')
     flavour = forms.CharField(widget=forms.Textarea(), label='Описание Персонажа')
+
