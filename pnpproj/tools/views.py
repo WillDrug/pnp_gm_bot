@@ -7,6 +7,10 @@ from django.urls import reverse
 # Create your views here.
 
 def login_view(request):
+    if 'index' in request.GET:
+        next_page = request.GET['index']
+    else:
+        next_page = reverse('game_index')
     if request.method == 'POST':
         form = UserForm(request.POST)
         username = request.POST['username']
@@ -16,17 +20,18 @@ def login_view(request):
             user.save()
             user = User.objects.get(username=username)
             login(request, user)
-            return redirect(reverse('index'))
+            return redirect(request.POST['next_page'])
         else: #trying to log in
             user = authenticate(username=username, password=password)
             if user is not None:
                 login(request, user)
-                return redirect(reverse('index'))
+                return redirect(request.POST['next_page'])
             else:
-                return render(request, 'tools/login.html', {'loginform': form, 'error': 'Неправильный пароль или существующий логин'})
+                next_page=request.POST['next_page']
+                return render(request, 'tools/login.html', {'loginform': form, 'error': 'Неправильный пароль или существующий логин', 'next_page': next_page})
     else:
         form = UserForm(auto_id=False)
-        return render(request, 'tools/login.html', {'loginform': form})
+        return render(request, 'tools/login.html', {'loginform': form, 'next_page': next_page})
 def logout_view(request):
     logout(request)
     return redirect('index')

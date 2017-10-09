@@ -17,6 +17,7 @@
         {{ field }}
         {% endfor %}
         {% csrf_token %}
+        <input type="hidden" name="next_page" value="{{ next_page }}">
 
 		<button class="btn btn-lg btn-primary btn-block" type="submit">
 			Войти

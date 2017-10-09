@@ -1,4 +1,4 @@
-{% extends 'game/gamemenu.html' %}
+{% extends 'main/gamemenu.html' %}
 {% block mid %}
 <div id="new_game">
     <p>{{ title }}</p>
@@ -9,12 +9,7 @@
     <button type="submit" class="save btn btn-default" id="newgamesave">Save</button>
     </form>
     {% if action == 'game' %}
-    <a id="newsetting">Создать Сеттинг</a>
-    <script>
-        $('#newsetting').bind("click", function() {
-             $('#new_game').parent().load("{% url 'new_game' %}?setting");
-        });
-    </script>
+    <a id="newsetting" href="{% url 'new_game' %}?setting">Создать Сеттинг</a>
     {% endif %}
 </div>
 {% endblock %}

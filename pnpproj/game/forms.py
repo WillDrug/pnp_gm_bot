@@ -3,7 +3,7 @@ import hashlib
 import time
 
 from django import forms
-from game.models import Game, Setting, Character
+from game.models import Game, Setting, Character, Languages, ParmGroup
 
 
 class NewSettingForm(forms.ModelForm):
@@ -13,6 +13,7 @@ class NewSettingForm(forms.ModelForm):
 
     name = forms.CharField(widget=forms.TextInput(), label='Название Сеттинга')
     flavour = forms.CharField(widget=forms.Textarea(), label='Описание Сеттинга')
+
 
 class NewGameForm(forms.ModelForm):
     class Meta:
@@ -29,19 +30,26 @@ class NewGameForm(forms.ModelForm):
         super(NewGameForm, self).__init__(*args, **kwargs)
         if user:
             self.fields['setting'].queryset = Setting.objects.filter(owner=user)
-        hasher = hashlib.sha1(user.__str__().encode('utf-8')+str(time.time()).encode('utf-8'))
+        hasher = hashlib.sha1(user.__str__().encode('utf-8') + str(time.time()).encode('utf-8'))
         self.fields['invite'] = forms.CharField(
             initial=base64.urlsafe_b64encode(hasher.digest()[0:10]).decode('utf-8'),
             widget=forms.HiddenInput()
         )
 
-class NewCharacterForm(forms.ModelForm):
+class BaseCharacterFormPlayer(forms.ModelForm):
     class Meta:
         model = Character
         fields = ('name', 'display_name', 'flavour')
-    name = forms.CharField(widget=forms.TextInput(), label='Имя Персонажа')
-    display_name = forms.CharField(widget=forms.TextInput(),
-                                   label='Обозначение персонажа пока имя неизвестно '
-                                         '(например, "человек в красной шляпе")')
-    flavour = forms.CharField(widget=forms.Textarea(), label='Описание Персонажа')
 
+class GroupConfigForm(forms.ModelForm):
+    class Meta:
+        model = ParmGroup
+        fields = ('name', 'flavour', 'cost_to_add')
+
+    name = forms.CharField(widget=forms.TextInput(), label='Название группы')
+    flavour = forms.CharField(widget=forms.Textarea(), label='Описание группы')
+    class ParmGroup(models.Model):
+        setting = models.ForeignKey(Setting, on_delete=models.CASCADE)
+        name = models.CharField(max_length=25)
+        flavour = models.CharField(max_length=2000, blank=True)
+        cost_to_add = models.IntegerField(default=40)
