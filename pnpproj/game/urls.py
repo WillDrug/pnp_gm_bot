@@ -6,7 +6,7 @@ from . import views
 urlpatterns = [
     url(r'play/?', views.game_main, name='game'),
     url(r'char_list/?', views.char_list, name='char_list'),
-    #url(r'base_char_create/(?P<setting>)/(?P<character>)/?$', views.base_char_edit, name='base_char_edit')
+    url(r'base_char_edit/(?P<character>[0-9]*)/?$', views.base_char_edit, name='base_char_edit')
 ]
 
 

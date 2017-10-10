@@ -2,7 +2,7 @@ from django.shortcuts import render, redirect
 from django.http import HttpRequest, HttpResponse
 from django.contrib.auth.models import User
 from game.models import Character, CharParm, Influence, InfSet, Item, Status, ParmGroup, Players, Setting, Game, \
-    Languages
+    Languages, Scene
 from game.forms import BaseCharForm, GMCharForm
 from django.contrib.auth.decorators import login_required
 from django.urls import reverse
@@ -13,9 +13,10 @@ from django.forms import inlineformset_factory, modelformset_factory
 
 
 def new_character(user):
-    newchar = Character(owner=user, game=Game.objects.filter(invite=user.first_name).first(),
+    game = Game.objects.filter(invite=user.first_name).first()
+    owner = user
+    newchar = Character(owner=owner, game=game,
                         experience=0)
-    # add forced form?
     newchar.save()
     return newchar
 
@@ -66,3 +67,19 @@ def char_list(request, **kw):
         return parms
     else:
         return render(request, 'game/char_list.html', parms)
+
+@login_required(redirect_field_name='index')
+def base_char_edit(request, **kw):
+    char = Character.objects.filter(pk=kw.pop('character')).first()
+    if request.user != char.owner and request.user != char.game.setting.owner:
+        return HttpResponse('BULLSHIT')
+    parms = dict(action_url=reverse('base_char_edit', kwargs=dict(character=char.pk)))
+    if request.method == 'POST':
+        parms['form'] = BaseCharForm(request.POST, instance=char)
+        if parms['form'].is_valid():
+            parms['form'].save()
+    else:
+        parms['form'] = BaseCharForm(instance=char)
+    parms['title'] = 'Редактировать Персонажа'
+    parms['deletable'] = False
+    return render(request, 'tools/modal.html', parms)

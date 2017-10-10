@@ -3,34 +3,56 @@ SOME_LINKS
 <form method="POST" action="{{ parms.action_url }}" id="char_list">
 {% csrf_token %}
 {{ parms.formset.management_form }}
+    <table>
+        <tr>
+            <td>name</td>
+            <td>known</td>
+            <td>exp</td>
+            <td>pause</td>
+            <td>levelup</td>
+            <td>scene</td>
+        </tr>
 {% for form in parms.formset %}
-    {{ form.errors }}
-    {{ form.id }}
-    {{ form.instance.name }}
-    {{ form.known }}
-    {{ form.experience }} ||
-    {{ form.pause }}
-    {{ form.levelup }}
-    {{ form.scene }}
-    <br>
+        <tr>
+            <td>{{ form.instance.name }}</td>
+            <td>{{ form.known }}</td>
+            <td>{{ form.experience }}</td>
+            <td>{{ form.pause }}</td>
+            <td>{{ form.levelup }}</td>
+            <td>{{ form.scene }}</td>
+    {% for hidden in form.hidden_fields %}
+        {{ hidden }}
+    {% endfor %}
+    </tr>
 {% endfor %}
+    </table>
     <input type="submit" value="LOLZ">
 </form>
+    <div class="center"><button data-toggle="modal" data-target="#squarespaceModal" class="btn btn-primary center-block">Click Me</button></div>
+
+<a id="test">test load-n-click</a>
 <script>
+    $("#test").on("click", function(e) {
+        $("#modal_content").load("http://127.0.0.1:31337/game/base_char_edit/1");
+    });
     $("#char_list").submit(function(e) {
-    var url = $("#char_list").attr('action');
-
-    $.ajax({
-           type: "POST",
-           url: url,
-           data: $("#char_list").serialize(), // serializes the form's elements.
-           success: function(data)
-           {
-               $('#char_list_container').parent().html(data)
-           }
-         });
-
-    e.preventDefault(); // avoid to execute the actual submit of the form.
-});
+        var url = $("#char_list").attr('action');
+        $.ajax({
+               type: "POST",
+               url: url,
+               data: $("#char_list").serialize(), // serializes the form's elements.
+               success: function(data)
+               {
+                   $('#char_list_container').parent().html(data)
+               }
+             });
+        e.preventDefault(); // avoid to execute the actual submit of the form.
+    });
 </script>
+</div>
+<div class="modal fade" id="squarespaceModal" tabindex="-1" role="dialog" aria-labelledby="modalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content" id="modal_content">
+        </div>
+    </div>
 </div>

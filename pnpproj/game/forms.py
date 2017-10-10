@@ -41,15 +41,16 @@ class BaseCharForm(forms.ModelForm):
         model = Character
         fields = ('name', 'display_name', 'flavour', 'languages')
 
-    name = forms.CharField(widget=forms.TextInput, label='Имя персонажа')
-    display_name = forms.CharField(widget=forms.TextInput, label='Обозначение персонажа (пока неизвестно мия)')
-    flavour = forms.CharField(widget=forms.Textarea, label='Описание персонажа')
-    languages = forms.ModelMultipleChoiceField(queryset=Languages.objects.none())
+    name = forms.CharField(widget=forms.TextInput(attrs={'class': 'form-control'}), label='Имя персонажа')
+    display_name = forms.CharField(widget=forms.TextInput(attrs={'class': 'form-control'}),
+                                   label='Обозначение персонажа (пока неизвестно имя)')
+    flavour = forms.CharField(widget=forms.Textarea(attrs={'class': 'form-control'}),
+                              label='Описание персонажа')
+    languages = forms.ModelMultipleChoiceField(queryset=Languages.objects.none(), label='Языки', required=False)
 
     def __init__(self, *ar, **kw):
-        setting = kw.pop('setting')
-        super(BaseCharForm, self).__init__(ar, kw)
-        self.fields['languages'].queryset = Languages.objects.filter(setting=setting).all()
+        super(BaseCharForm, self).__init__(*ar, **kw)
+        self.fields['languages'].queryset = Languages.objects.filter(setting=self.instance.game.setting).all()
 
 class GMCharForm(forms.ModelForm):
     class Meta:
@@ -59,10 +60,9 @@ class GMCharForm(forms.ModelForm):
     levelup = forms.BooleanField(required=False)
     known = forms.BooleanField(required=False)
     experience = forms.IntegerField(required=False)
-    scene = forms.ModelChoiceField(queryset=Scene.objects.none(), required=False)
     pause = forms.BooleanField(required=False)
+    scene = forms.ModelChoiceField(queryset=Scene.objects.none(), required=False)
 
     def __init__(self, *ar, **kw):
-        instance = kw.get('instance')
-        super(GMCharForm, self).__init__(ar, kw)
-        self.fields['scene'].queryset = Scene.objects.filter(game=instance.game).all()
+        super(GMCharForm, self).__init__(*ar, **kw)
+        self.fields['scene'].queryset = Scene.objects.filter(game=self.instance.game).all()

@@ -43,6 +43,12 @@ class Languages(models.Model):
     setting = models.ForeignKey(Setting, blank=False, on_delete=models.CASCADE)
     name = models.CharField(max_length=25)
 
+    def __str__(self):
+        return self.name
+
+    def __unicode__(self):
+        return self.name
+
 
 class Players(models.Model):
     game = models.ForeignKey(Game, on_delete=models.CASCADE)
@@ -53,10 +59,10 @@ class Players(models.Model):
 class Character(models.Model):
     owner = models.ForeignKey(User, on_delete=models.PROTECT)
     game = models.ForeignKey(Game, on_delete=models.CASCADE)
-    name = models.CharField(max_length=30)
-    display_name = models.CharField(max_length=50)
+    name = models.CharField(max_length=30, default='')
+    display_name = models.CharField(max_length=50, default='')
     known = models.BooleanField(default=False)
-    flavour = models.CharField(max_length=250)
+    flavour = models.CharField(max_length=250, blank=True, default='')
     experience = models.IntegerField(default=0)
     levelup = models.BooleanField(default=False)
     scene = models.ForeignKey(Scene, blank=True, null=True, on_delete=models.PROTECT)
