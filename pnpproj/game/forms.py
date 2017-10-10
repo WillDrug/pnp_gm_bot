@@ -3,7 +3,7 @@ import hashlib
 import time
 
 from django import forms
-from game.models import Game, Setting, Character, Languages, ParmGroup
+from game.models import Game, Setting, Character, Languages, ParmGroup, Scene
 
 
 class NewSettingForm(forms.ModelForm):
@@ -44,9 +44,25 @@ class BaseCharForm(forms.ModelForm):
     name = forms.CharField(widget=forms.TextInput, label='Имя персонажа')
     display_name = forms.CharField(widget=forms.TextInput, label='Обозначение персонажа (пока неизвестно мия)')
     flavour = forms.CharField(widget=forms.Textarea, label='Описание персонажа')
-    languages = forms.ModelMultipleChoiceField()
+    languages = forms.ModelMultipleChoiceField(queryset=Languages.objects.none())
 
     def __init__(self, *ar, **kw):
         setting = kw.pop('setting')
-        super(BaseCharForm, self).__init__(*ar, **kw)
+        super(BaseCharForm, self).__init__(ar, kw)
         self.fields['languages'].queryset = Languages.objects.filter(setting=setting).all()
+
+class GMCharForm(forms.ModelForm):
+    class Meta:
+        model = Character
+        fields = ('known', 'experience', 'levelup', 'scene', 'pause')
+
+    levelup = forms.BooleanField(required=False)
+    known = forms.BooleanField(required=False)
+    experience = forms.IntegerField(required=False)
+    scene = forms.ModelChoiceField(queryset=Scene.objects.none(), required=False)
+    pause = forms.BooleanField(required=False)
+
+    def __init__(self, *ar, **kw):
+        instance = kw.get('instance')
+        super(GMCharForm, self).__init__(ar, kw)
+        self.fields['scene'].queryset = Scene.objects.filter(game=instance.game).all()

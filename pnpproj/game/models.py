@@ -57,9 +57,10 @@ class Character(models.Model):
     display_name = models.CharField(max_length=50)
     known = models.BooleanField(default=False)
     flavour = models.CharField(max_length=250)
-    experience = models.IntegerField()
+    experience = models.IntegerField(default=0)
     levelup = models.BooleanField(default=False)
     scene = models.ForeignKey(Scene, blank=True, null=True, on_delete=models.PROTECT)
+    pause = models.BooleanField(default=False)
     languages = models.ManyToManyField(Languages)
 
     def __str__(self):

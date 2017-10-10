@@ -1,3 +1,36 @@
-{% for char in parms.char_edit_parms %}
-{% include 'game/char_edit.html' with parm=char gm=gm %}
+<div id="char_list_container">
+SOME_LINKS
+<form method="POST" action="{{ parms.action_url }}" id="char_list">
+{% csrf_token %}
+{{ parms.formset.management_form }}
+{% for form in parms.formset %}
+    {{ form.errors }}
+    {{ form.id }}
+    {{ form.instance.name }}
+    {{ form.known }}
+    {{ form.experience }} ||
+    {{ form.pause }}
+    {{ form.levelup }}
+    {{ form.scene }}
+    <br>
 {% endfor %}
+    <input type="submit" value="LOLZ">
+</form>
+<script>
+    $("#char_list").submit(function(e) {
+    var url = $("#char_list").attr('action');
+
+    $.ajax({
+           type: "POST",
+           url: url,
+           data: $("#char_list").serialize(), // serializes the form's elements.
+           success: function(data)
+           {
+               $('#char_list_container').parent().html(data)
+           }
+         });
+
+    e.preventDefault(); // avoid to execute the actual submit of the form.
+});
+</script>
+</div>

@@ -7,9 +7,9 @@
 
 {% block left %}
 {% if gm %}
-{% include 'game/char_list.html' with parms=left_menu gm=gm %}
+{% include 'game/char_list.html' with parms=char_list_parms.parms %}
 {% else %}
-{% include 'game/char_edit.html' with parms=left_menu gm=gm %}
+{% include 'game/char.html' %}
 {% endif %}
 {% endblock %}
 
