@@ -1,7 +1,10 @@
 {% extends 'main/gameindex.html' %}
+
 {% block navleft %}
  <li class="nav-item"><a class="nav-link" href="{% url 'game_index' %}?menu">Выбор Игры</a></li>
 {% endblock %}
+
+
 {% block left %}
 {% if gm %}
 {% include 'game/char_list.html' with parms=left_menu gm=gm %}
@@ -9,9 +12,13 @@
 {% include 'game/char_edit.html' with parms=left_menu gm=gm %}
 {% endif %}
 {% endblock %}
+
+
 {% block mid %}
 gamelog
 {% endblock %}
+
+
 {% block right %}
 1) Players Ingame (activate dat shit with ajax)
 2) GM tools and shit

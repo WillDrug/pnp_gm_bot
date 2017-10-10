@@ -58,7 +58,7 @@ class Character(models.Model):
     known = models.BooleanField(default=False)
     flavour = models.CharField(max_length=250)
     experience = models.IntegerField()
-    levelup = models.BooleanField(default=True)
+    levelup = models.BooleanField(default=False)
     scene = models.ForeignKey(Scene, blank=True, null=True, on_delete=models.PROTECT)
     languages = models.ManyToManyField(Languages)
 

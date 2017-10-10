@@ -36,20 +36,17 @@ class NewGameForm(forms.ModelForm):
             widget=forms.HiddenInput()
         )
 
-class BaseCharacterFormPlayer(forms.ModelForm):
+class BaseCharForm(forms.ModelForm):
     class Meta:
         model = Character
-        fields = ('name', 'display_name', 'flavour')
+        fields = ('name', 'display_name', 'flavour', 'languages')
 
-class GroupConfigForm(forms.ModelForm):
-    class Meta:
-        model = ParmGroup
-        fields = ('name', 'flavour', 'cost_to_add')
+    name = forms.CharField(widget=forms.TextInput, label='Имя персонажа')
+    display_name = forms.CharField(widget=forms.TextInput, label='Обозначение персонажа (пока неизвестно мия)')
+    flavour = forms.CharField(widget=forms.Textarea, label='Описание персонажа')
+    languages = forms.ModelMultipleChoiceField()
 
-    name = forms.CharField(widget=forms.TextInput(), label='Название группы')
-    flavour = forms.CharField(widget=forms.Textarea(), label='Описание группы')
-    class ParmGroup(models.Model):
-        setting = models.ForeignKey(Setting, on_delete=models.CASCADE)
-        name = models.CharField(max_length=25)
-        flavour = models.CharField(max_length=2000, blank=True)
-        cost_to_add = models.IntegerField(default=40)
+    def __init__(self, *ar, **kw):
+        setting = kw.pop('setting')
+        super(BaseCharForm, self).__init__(*ar, **kw)
+        self.fields['languages'].queryset = Languages.objects.filter(setting=setting).all()
