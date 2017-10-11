@@ -9,7 +9,7 @@
 {% if gm %}
 {% include 'game/char_list.html' with parms=char_list_parms.parms %}
 {% else %}
-{% include 'game/char.html' %}
+{% include 'game/char.html' with parms=char_parms.parms%}
 {% endif %}
 {% endblock %}
 

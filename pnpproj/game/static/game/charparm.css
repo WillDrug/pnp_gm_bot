@@ -1,0 +1,11 @@
+.charparm {
+    display: flex;
+    flex-basis: 0;
+    flex-direction: row;
+    flex-grow: true;
+}
+.charparm input {
+    border: 0;
+    width: 100%;
+    background-color: transparent;
+}

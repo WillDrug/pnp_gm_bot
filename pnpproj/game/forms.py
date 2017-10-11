@@ -3,7 +3,7 @@ import hashlib
 import time
 
 from django import forms
-from game.models import Game, Setting, Character, Languages, ParmGroup, Scene
+from game.models import Game, Setting, Character, Languages, ParmGroup, Scene, CharParm
 
 
 class NewSettingForm(forms.ModelForm):
@@ -35,6 +35,8 @@ class NewGameForm(forms.ModelForm):
             initial=base64.urlsafe_b64encode(hasher.digest()[0:10]).decode('utf-8'),
             widget=forms.HiddenInput()
         )
+
+
 
 class BaseCharForm(forms.ModelForm):
     class Meta:

@@ -1,0 +1,25 @@
+{% load static %}
+<link rel="stylesheet" type="text/css" href="{% static 'game/tooltip.css' %}" />
+<link rel="stylesheet" type="text/css" href="{% static 'game/charparm.css' %}" />
+{{ parms.character.name }} [{{ parms.character.experience }}]<br>
+<form method="POST" action="{{ parms.action_url }}" id="charparms">
+{% for group in parms.groups %}
+    <div class="group">
+    <div class="cp_tooltip">
+        {{ group.group.name }}
+        <div class="cp_tooltiptext">{{ group.group.flavour }}</div>
+    </div>
+    {{ group.charparm_formset.management_form }}
+    {% for form in group.charparm_formset %}
+        <div class="cp_tooltip charparm"><span>{{ form.name }}</span>
+        <div class="cp_tooltiptext">{{ form.flavour.initial }}
+        </div>
+        {{ form.value }}
+        </div>
+    {% endfor %}
+     </div>
+{% endfor %}
+    <script>
+    $('#charparms :input').each(function(){this.disabled = 'true'});
+    </script>
+</form>

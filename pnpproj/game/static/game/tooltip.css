@@ -1,0 +1,23 @@
+.cp_tooltip {
+    position: relative
+}
+
+.cp_tooltip .cp_tooltiptext {
+    visibility: hidden;
+    width: auto;
+    background-color: black;
+    color: #fff;
+    text-align: center;
+    border-radius: 6px;
+    padding: 5px 0;
+
+    /* Position the tooltip */
+    position: absolute;
+    left: 200px;
+    width: 200px;
+    z-index: 1;
+}
+
+.cp_tooltip:hover .cp_tooltiptext {
+    visibility: visible;
+}
