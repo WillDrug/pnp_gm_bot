@@ -91,14 +91,21 @@ class CharParm(models.Model):
     flavour = models.CharField(max_length=2000)
     value = models.IntegerField()
     override_cost = models.IntegerField(default=-1)
-    affeced_by = models.ManyToManyField('self', symmetrical=False)
+    affected_by = models.ManyToManyField('self', symmetrical=False)
 
     def true_value(self):
         return 0  # to fix. how we display the value after items and shit.
 
     def roll(self):
         return 0  # to fix. rolls shit.
-
+"""
+    def save(self, *args, **kwargs):
+        if not self._state.adding:
+            print(self._loaded_values['value'])
+            print(self.value)
+            print(self.character)
+        super(self, CharParm).save(*args, **kwargs)
+"""
 
 class InfSet(models.Model):
     reference = models.CharField(max_length=25)
@@ -131,17 +138,11 @@ def populate_groups(sender, instance, created, *args, **kwargs):
         instance.save()
         lang = Languages(setting=instance, name='common')
         lang.save()
-        parm = ParmGroup(setting=instance, name='Основное', cost_to_add=-1, cost=10,
-                         flavour='Основные параметры персонажа')
-        parm.save()
         parm = ParmGroup(setting=instance, name='Статы', cost_to_add=-1, cost=25,
                          flavour='Базовые возможности персонажа')
         parm.save()
-        parm = ParmGroup(setting=instance, name='Вторичное', cost_to_add=-1, cost=5,
-                         flavour='Вторичные навыки')
-        parm.save()
-        parm = ParmGroup(setting=instance, name='Третичное', cost_to_add=0, cost=1,
-                         flavour='Третичные наывки (как, например, вязание корзинок)')
+        parm = ParmGroup(setting=instance, name='Основное', cost_to_add=-1, cost=10,
+                         flavour='Основные параметры персонажа')
         parm.save()
         parm = ParmGroup(setting=instance, name='Бой', cost_to_add=-1, cost=10,
                          flavour='Боевые способности персонажа')
@@ -149,6 +150,12 @@ def populate_groups(sender, instance, created, *args, **kwargs):
         parm = ParmGroup(setting=instance, name='Магия', cost_to_add=-1, cost=100,
                          flavour='Магические способности персонажа. '
                                  'Если в таланты персонажа не добавлена магия стоимость умений будет зашкаливать')
+        parm.save()
+        parm = ParmGroup(setting=instance, name='Вторичное', cost_to_add=-1, cost=5,
+                         flavour='Вторичные навыки')
+        parm.save()
+        parm = ParmGroup(setting=instance, name='Третичное', cost_to_add=0, cost=1,
+                         flavour='Третичные наывки (как, например, вязание корзинок)')
         parm.save()
         parm = ParmGroup(setting=instance, name='Таланты', cost_to_add=50, cost=-1,
                          flavour='Особенности персонажа '
@@ -201,14 +208,14 @@ def populate_parms(sender, instance, created, *args, **kwargs):
         initiative = CharParm(character=instance, group=grp, name='Инициатива', value=0,
                               flavour='Определяет кто ходит первым')
         initiative.save()
-        initiative.affeced_by.add(dexterity)
-        initiative.affeced_by.add(agility)
+        initiative.affected_by.add(dexterity)
+        initiative.affected_by.add(agility)
         initiative.save()
         health = CharParm(character=instance, group=grp, name='Здоровье', value=1,
                           flavour='Здоровье персонажа. Персонаж не имеет проблем пока успешно прокидывает '
                                   'сложность здоровья. Прокачивать здоровье проще, чем выносливость')
         health.save()
-        health.affeced_by.add(constitution)
+        health.affected_by.add(constitution)
         health.save()
 
         # combat
@@ -216,17 +223,17 @@ def populate_parms(sender, instance, created, *args, **kwargs):
         attack = CharParm(character=instance, group=grp, name='Атака', value=0,
                           flavour='Умение обращаться с оружием и наносить им урон (или обращаться с кулаками)')
         attack.save()
-        attack.affeced_by.add(dexterity)
+        attack.affected_by.add(dexterity)
         attack.save()
         block = CharParm(character=instance, group=grp, name='Блок', value=0,
                          flavour='Умение останавливать удары (не делает кожу лезвие-непробиваемым)')
         block.save()
-        block.affeced_by.add(dexterity)
+        block.affected_by.add(dexterity)
         block.save()
         dodge = CharParm(character=instance, group=grp, name='Уклонение', value=0,
                          flavour='Умение уклоняться от ударов')
         dodge.save()
-        dodge.affeced_by.add(dexterity)
+        dodge.affected_by.add(dexterity)
         dodge.save()
 
         # magic
@@ -234,17 +241,17 @@ def populate_parms(sender, instance, created, *args, **kwargs):
         magic_level = CharParm(character=instance, group=grp, name='Уровень Магии', value=-1,
                                flavour='Определяет максимальную сложность заклинаний вашего персонажа')
         magic_level.save()
-        magic_level.affeced_by.add(intelligence)
+        magic_level.affected_by.add(intelligence)
         magic_level.save()
         projection = CharParm(character=instance, group=grp, name='Проекция', value=0,
                               flavour='Определяет насколько хорошо вы целитесь или защищаетесь заклинаниями')
         projection.save()
-        projection.affeced_by.add(power)
+        projection.affected_by.add(power)
         projection.save()
         mana = CharParm(character=instance, group=grp, name='Мана', value=0,
                         flavour='Духовная усталость. Работает как здоровье.')
         mana.save()
-        mana.affeced_by.add(power)
+        mana.affected_by.add(power)
         mana.save()
 
         # secondary
@@ -252,43 +259,43 @@ def populate_parms(sender, instance, created, *args, **kwargs):
         acrobatics = CharParm(character=instance, group=grp, name='Акробатика', value=0,
                               flavour='Умение персонажа прыгать, гнуться и оказываться за спиной оппонента')
         acrobatics.save()
-        acrobatics.affeced_by.add(dexterity)
+        acrobatics.affected_by.add(dexterity)
         acrobatics.save()
         athletics = CharParm(character=instance, group=grp, name='Атлетика', value=0,
                              flavour='Умение персонажа поднимать тяжести и управляться с доспехами')
         athletics.save()
-        athletics.affeced_by.add(strength)
+        athletics.affected_by.add(strength)
         athletics.save()
         occult = CharParm(character=instance, group=grp, name='Оккульт', value=0,
                           flavour='Умение персонажа чувствовать колдунство перед собой и проводить ритуалы'
                                   '(По умолчанию магия не видна)')
         occult.save()
-        occult.affeced_by.add(perception)
-        occult.affeced_by.add(magic_level)
+        occult.affected_by.add(perception)
+        occult.affected_by.add(magic_level)
         occult.save()
         notice = CharParm(character=instance, group=grp, name='Наблюдательность', value=0,
                           flavour='Умение персонажа успешно найти вещь или выделить в толпе кого-то')
         notice.save()
-        notice.affeced_by.add(perception)
+        notice.affected_by.add(perception)
         social = CharParm(character=instance, group=grp, name='Социальное', value=0,
                           flavour='Умение персонажа звучать убедительно')
         social.save()
-        social.affeced_by.add(power)
+        social.affected_by.add(power)
         social.save()
         style = CharParm(character=instance, group=grp, name='Стиль', value=0,
                          flavour='Умение персонажа круто выглядеть в любой ситуации. '
                                  'Это не третичный навык потому что быть крутым чего-то да стоит.')
         style.save()
-        style.affeced_by.add(power)
+        style.affected_by.add(power)
         style.save()
         empathy = CharParm(character=instance, group=grp, name='Эмпатия', value=0,
                            flavour='Умение "читать" других людей. Бросок идет против Стойкости.')
         empathy.save()
-        empathy.affeced_by.add(perception)
+        empathy.affected_by.add(perception)
         empathy.save()
         composure = CharParm(character=instance, group=grp, name='Стойкость', value=0,
                              flavour='Умение персонажа не терять лицо и переносить боль. '
                                      'Влияет на контроль эмоций и перенос урона.')
         composure.save()
-        composure.affeced_by.add(willpower)
+        composure.affected_by.add(willpower)
         composure.save()
