@@ -14,7 +14,7 @@ SOME_LINKS
         </tr>
 {% for form in parms.formset %}
         <tr>
-            <td>{{ form.instance.name }}</td>
+            <td><a href="{% url 'char_edit' form.instance.pk %}" class="char_edit_link">{{ form.instance.name }}</a></td>
             <td>{{ form.known }}</td>
             <td>{{ form.experience }}</td>
             <td>{{ form.pause }}</td>
@@ -32,6 +32,11 @@ SOME_LINKS
 
 <a id="test">test load-n-click</a>
 <script>
+    $(".char_edit_link").on("click", function(e) {
+        $('#char_list_container').parent().load($(this).attr("href"));
+        return false;
+    });
+
     $("#test").on("click", function(e) {
         $("#modal_content").load("http://127.0.0.1:31337/game/base_char_edit/1");
     });

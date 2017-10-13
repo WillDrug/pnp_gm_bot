@@ -92,11 +92,11 @@ def char_edit(request, **kw):
         group_dict = dict(group=group)
         group_dict['group_edit_action'] = reverse('group_edit', kwargs=dict(group=group.pk))
         if request.method == 'POST':
-            formset_to_save = ParmFormSet(request.POST, request.FILES, instance=char)
+            formset_to_save = ParmFormSet(request.POST, request.FILES, instance=char, prefix=group.name)
             if formset_to_save.is_valid():
-                formset_to_save.save(commit=False)
+                formset_to_save.save()
         group_dict['charparm_formset'] = ParmFormSet(queryset=CharParm.objects.filter(group=group).all(),
-                                           instance=char)
+                                           instance=char, prefix=group.name)
         parms['parms']['groups'].append(group_dict)
     parms['parms']['inventory'] = list()
     # populate formsets for inventory and such

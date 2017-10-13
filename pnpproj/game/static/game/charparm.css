@@ -4,8 +4,31 @@
     flex-direction: row;
     flex-grow: true;
 }
-.charparm div input {
+.charparm div input[type=number] {
     border: 0;
-    width: 30%;
+    width: 50px;
+    text-align: center;
     background-color: transparent;
+}
+
+.hidden {
+    display: none;
+}
+
+.charparm div .btnplus {
+    width:20px;
+    height:20px;
+    padding: 0;
+}
+
+.charparm div .char_buttons {
+    display: flex;
+    flex-direction: column;
+    float:right
+}
+
+.charparm div .btnminus {
+    width:20px;
+    height:20px;
+    padding:0px;
 }

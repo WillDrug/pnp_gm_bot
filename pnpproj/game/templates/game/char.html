@@ -11,62 +11,91 @@
         {{ group.group.name }}
         <div class="cp_tooltiptext">{{ group.group.flavour }}</div>
     </div>
-        {{ group.charparm_formset.management_form }}
         {% csrf_token %}
-    {% for form in group.charparm_formset %}
-        {% if form.instance.override_cost != -1 %}
-            {% define form.instance.override_cost as cost %}
+        {{ group.charparm_formset.management_form }}
+        {% for form in group.charparm_formset %}
+        {% if form.instance.override_cost > -1 %}
+        {% define form.instance.override_cost as cost %} defined {{ cost }}
         {% else %}
-            {% define group.group.cost as cost %}
+        {% define group.group.cost as cost %}
         {% endif %}
-        {% for hidden in form.hidden %}
-        {{ hidden }}
-        {% endfor %}
-        <div class="cp_tooltip charparm"><span>{{ form.name.initial }}</span>
-        <div class="cp_tooltiptext">{{ form.flavour.initial }}
-        </div>
-            <div class="value_div">
-            {% if cost != -1 %}
-                <button type="button" class="btn btn-danger btn-number minusbtn" min="{{ form.value.initial }}" cost="{{ cost }}" data-type="minus">
-                <span class="glyphicon glyphicon-minus"></span>
-                </button>
-                {{ form.value }}
-             <button type="button" class="btn btn-success btn-number plusbtn" cost="{{ cost  }}" data-type="plus">
-                  <span class="glyphicon glyphicon-plus"></span>
-              </button>
-                {% else %}
-                {{ form.value }}
-            {% endif %}
+        <div class="charparm">
+            {% for hidden in form.hidden %}
+                {{ hidden }}
+            {% endfor %}
+            <div class="hidden">{{ form.name }} {{ form.flavour }}</div>
+            <div class="cp_tooltip">
+                {{ form.name.initial }}
+                    {{ form.value }}
+                    <span class="char_buttons" cost="{{ cost }}" initial="{{ form.value.initial }}">
+                        <button type="button" class="btn btn-success btn-number btnplus" data-type="plus" data-field="quant[2]">
+                        +
+                        </button>
+                        <button type="button" class="btn btn-danger btn-number btnminus"  disabled data-type="minus" data-field="quant[2]">
+                        -
+                        </button>
+                    </span>
+                <span class="cp_tooltiptext">{{ form.flavour.initial }}</span>
             </div>
         </div>
-    {% endfor %}
-     </div>
+        {% endfor %}
 {% endfor %}
     <script>
-    $('.plusbtn').on("click", function(){
-        exp = +$('#exp').html()
-        if (+exp-$(this).attr("cost")<0) {
-            return false;
+        $('.btnplus').each(function(){
+            exp = +$('#exp').html();
+            cost=+$(this).parent().attr("cost");
+            if (exp-cost<0) {
+                $(this).attr("disabled", true);
+            } else {
+                $(this).attr("disabled", false);
+            }
+         });
+      $('.btnplus').on("click", function(){
+        exp = +$('#exp').html();
+        initial = +$(this).parent().attr("initial");
+        cost = +$(this).parent().attr("cost");
+        val = +$(this).parent().prev().val();
+        if (exp-cost < 0) {
+            return true
         }
-        num = +$(this).prev().val()+1
-        exp = +exp-$(this).attr("cost")
-        $('#exp').html(exp)
-        $(this).prev().val(num)
+        $('#exp').html(exp-cost);
+        $(this).parent().prev().val(val+1);
+        $('.btnplus').each(function(){
+            exp = +$('#exp').html();
+            cost=+$(this).parent().attr("cost");
+            if (exp-cost<0) {
+                $(this).attr("disabled", true);
+            } else {
+                $(this).attr("disabled", false);
+            }
+         });
+        $('.btnminus').each(function() {
+            if ($(this).parent().prev().val()==$(this).parent().attr("initial")) {
+                $(this).attr("disabled", true);
+            } else {
+                $(this).attr("disabled", false);
+            }
+        });
 
-    });
-    $('.minusbtn').on("click", function(){
-        exp = +$('#exp').html()
-        num = +$(this).next().val()
-        if (num==$(this).attr("min")) {
-            return false;
+      });
+      $('.btnminus').on("click", function(){
+        exp = +$('#exp').html();
+        initial = +$(this).parent().attr("initial");
+        cost = +$(this).parent().attr("cost");
+        val = +$(this).parent().prev().val();
+        if (val<=initial) {
+            return true;
         }
-        num = +$(this).next().val()-1
-        exp = +exp-(-$(this).attr("cost"))
-        $('#exp').html(exp)
-        $(this).next().val(num)
-
-    });
-      $('#charparms :input:not(button)').each(function(){$(this).attr("disabled", true)});
+        $('#exp').html(exp+cost);
+        $(this).parent().prev().val(val-1);
+        $('.btnplus').each(function(){ exp = +$('#exp').html(); cost=+$(this).parent().attr("cost"); if (exp-cost<0) {$(this).attr("disabled", true); } });
+        if ($(this).parent().prev().val()==$(this).parent().attr("initial")) {
+            $(this).attr("disabled", true);
+        } else {
+            $(this).attr("disabled", false);
+        }
+      });
+      $('#charparms input:not(button)').attr("disabled", true)
       $("#charparms").submit(function(e) {
         $('#charparms :input:not(button)').each(function(){$(this).attr("disabled", false)});
         var url = $("#charparms").attr('action');
