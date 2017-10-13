@@ -98,14 +98,36 @@ class CharParm(models.Model):
 
     def roll(self):
         return 0  # to fix. rolls shit.
-"""
+
+    @classmethod
+    def from_db(cls, db, field_names, values):
+        # Default implementation of from_db() (subject to change and could
+        # be replaced with super()).
+        if len(values) != len(cls._meta.concrete_fields):
+            values = list(values)
+            values.reverse()
+            values = [
+                values.pop() if f.attname in field_names else DEFERRED
+                for f in cls._meta.concrete_fields
+                ]
+        instance = cls(*values)
+        instance._state.adding = False
+        instance._state.db = db
+        # customization to store the original field values on the instance
+        instance._loaded_values = dict(zip(field_names, values))
+        return instance
+
     def save(self, *args, **kwargs):
         if not self._state.adding:
-            print(self._loaded_values['value'])
-            print(self.value)
-            print(self.character)
-        super(self, CharParm).save(*args, **kwargs)
-"""
+            cost = self.override_cost if self.override_cost>-1 else self.group.cost
+            self.character.experience -= (self.value-self._loaded_values['value'])*cost
+            self.character.save()
+        else:
+            cost = self.group.cost_to_add
+            self.character.experience -= cost
+            self.character.save()
+        super(CharParm, self).save(*args, **kwargs)
+
 
 class InfSet(models.Model):
     reference = models.CharField(max_length=25)

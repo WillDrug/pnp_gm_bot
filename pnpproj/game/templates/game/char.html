@@ -3,14 +3,23 @@
 {% load extra_tags %}
 <link rel="stylesheet" type="text/css" href="{% static 'game/tooltip.css' %}" />
 <link rel="stylesheet" type="text/css" href="{% static 'game/charparm.css' %}" />
+<script src="{% static 'tools/superformset.js' %}"></script>
+
     {{ parms.character.name }} [<span id="exp">{{ parms.character.experience }}</span>]
 <form method="POST" action="{{ parms.action_url }}" id="charparms">
 {% for group in parms.groups %}
-    <div class="group">
+    <div class="group" id="grp{{ group.group.pk }}">
+        <div class="empty-form dynamic-form hidden">
+            {{ group.charparm_formset.empty_form }}
+        </div>
+         <script>
+
+        </script>
     <div class="cp_tooltip">
         {{ group.group.name }}
         <div class="cp_tooltiptext">{{ group.group.flavour }}</div>
     </div>
+        <div class="selector">
         {% csrf_token %}
         {{ group.charparm_formset.management_form }}
         {% for form in group.charparm_formset %}
@@ -20,9 +29,7 @@
         {% define group.group.cost as cost %}
         {% endif %}
         <div class="charparm">
-            {% for hidden in form.hidden %}
-                {{ hidden }}
-            {% endfor %}
+            {{ form.id }}
             <div class="hidden">{{ form.name }} {{ form.flavour }}</div>
             <div class="cp_tooltip">
                 {{ form.name.initial }}
@@ -39,8 +46,11 @@
             </div>
         </div>
         {% endfor %}
+        </div>
+    </div>
 {% endfor %}
     <script>
+
         $('.btnplus').each(function(){
             exp = +$('#exp').html();
             cost=+$(this).parent().attr("cost");
@@ -95,7 +105,7 @@
             $(this).attr("disabled", false);
         }
       });
-      $('#charparms input:not(button)').attr("disabled", true)
+      $('#charparms input[type=number]').attr("disabled", true)
       $("#charparms").submit(function(e) {
         $('#charparms :input:not(button)').each(function(){$(this).attr("disabled", false)});
         var url = $("#charparms").attr('action');
