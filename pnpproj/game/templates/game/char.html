@@ -1,6 +1,13 @@
 <div id="char_container">
 {% load static %}
 {% load extra_tags %}
+    {% if parms.character.levelup %}
+        {% define True as can_do %}
+    {% elif parms.gm %}
+        {% define True as can_do %}
+    {% else %}
+        {% define False as can_do %}
+    {% endif %}
 <link rel="stylesheet" type="text/css" href="{% static 'game/tooltip.css' %}" />
 <link rel="stylesheet" type="text/css" href="{% static 'game/charparm.css' %}" />
 <script src="{% static 'tools/superformset.js' %}"></script>
@@ -8,104 +15,316 @@
     {{ parms.character.name }} [<span id="exp">{{ parms.character.experience }}</span>]
 <form method="POST" action="{{ parms.action_url }}" id="charparms">
 {% for group in parms.groups %}
-    <div class="group" id="grp{{ group.group.pk }}">
-        <div class="empty-form dynamic-form hidden">
-            {{ group.charparm_formset.empty_form }}
-        </div>
-         <script>
-
-        </script>
-    <div class="cp_tooltip">
-        {{ group.group.name }}
-        <div class="cp_tooltiptext">{{ group.group.flavour }}</div>
-    </div>
-        <div class="selector">
+    <div class="group" id="grp{{ group.charparm_formset.prefix }}">
         {% csrf_token %}
         {{ group.charparm_formset.management_form }}
+        <div class="cp_tooltip">
+            <a id="group{{group.group.pk}}">{{ group.group.name }}</a>
+            <script>
+                $('#group{{group.group.pk}}').on("click", function(){
+                    $('#char_container').parent().load("{% url 'group_edit' parms.character.pk group.group.pk %}")
+                });
+            </script>
+
+                {% if group.group.cost_to_add > -1 and can_do %}
+                <button id="add-{{ group.group.pk }}" cost="{{group.group.cost_to_add}}" class="btn btn-success btn-number btnadd" type="button">+</button>
+                <!--<button id="delete-{{ group.group.pk }}" type="button">Delete</button>-->
+                <script type="text/html" id="charparm-{{ group.group.pk }}-template">
+                    <fieldset class="charparm-{{ group.group.pk }}-__prefix__" style="display: none;">
+                        {{ group.charparm_formset.empty_form.as_p }}
+                    </fieldset>
+                </script>
+                <script>
+                    $('#add-{{ group.group.pk }}').djangoInlineFormAdd({
+                        prefix: "{{ group.charparm_formset.prefix }}",
+                        deleteButtonId: "#delete-{{ group.group.pk }}",
+                        containerId: "#formset_container_{{ group.charparm_formset.prefix }}",
+                        templateId: "#charparm-{{ group.group.pk }}-template",
+                        postClick: function() {
+                            exp = +$('#exp').html();
+                            exp = exp-$(this).attr("cost");
+                            $('#exp').html(exp);
+                            $('.btnadd').each(function(){
+                                exp = +$('#exp').html();
+                                cost = +$(this).attr("cost");
+                                if (exp-cost<0) {
+                                    $(this).attr("disabled", true);
+                                } else {
+                                    $(this).attr("disabled", false);
+                                }
+                            });
+                        }
+                    });
+                </script>
+            {% endif %}
+            <div class="cp_tooltiptext">{{ group.group.flavour }}</div>
+        </div>
+        <div id="formset_container_{{ group.charparm_formset.prefix }}">
         {% for form in group.charparm_formset %}
-        {% if form.instance.override_cost > -1 %}
-        {% define form.instance.override_cost as cost %} defined {{ cost }}
-        {% else %}
-        {% define group.group.cost as cost %}
-        {% endif %}
-        <div class="charparm">
-            {{ form.id }}
-            <div class="hidden">{{ form.name }} {{ form.flavour }}</div>
+            {% if form.instance.override_cost > -1 %}
+                {% define form.instance.override_cost as cost %}
+            {% else %}
+                {% define group.group.cost as cost %}
+            {% endif %}
+            <fieldset class="charparm_{{ group.charparm_formset.prefix }} charparm_{{ forloop.counter0 }}">
+                {{ form.id }}
+                <div class="hidden">{{ form.name }} {{ form.flavour }}</div>
+                <div class="charparm" id="{{form.id.initial}}" cost="{{ cost }}" initial="{{ form.value.initial }}">
+                        {% if parms.gm %} {{ form.DELETE }} {% endif %}
+                        <div class="cp_tooltip">{{ form.name.initial }}
+                        <div class="cp_tooltiptext">{{ form.flavour.initial }}</div></div>
+                        {{ form.value }}
+                    {% define form.instance.affected_string.items as affects %}
+                    {% if affects|length == 0 %}
+                        <div>{{ form.instance.true_value }}</div>
+                    {% else %}
+                        <div class="cp_tooltip">{{ form.instance.true_value }}
+                        <div class="cp_tooltiptext">
+                        {% for fr, to in form.instance.affected_string.items %}
+                            <p>{{ fr }}: +{{ to }}</p>
+                        {% endfor %}
+                        </div>
+                        {% endif %}
+                        {% if can_do %}
+                            <span class="char_buttons">
+                            <button type="button" anc="{{form.id.initial}}" class="btn btn-success btn-number btnplus" data-type="plus" data-field="quant[2]">
+                            +
+                            </button>
+                            <button type="button" anc="{{form.id.initial}}" class="btn btn-danger btn-number btnminus"  disabled data-type="minus" data-field="quant[2]">
+                            -
+                            </button>
+                            </span>
+                        {% endif %}
+                </div>
+            </fieldset>
+            {% endfor %}
+
+        </div>
+    </div>
+{% endfor %}
+
+{% if parms.gm %}
+    <div class="group">
+            <a id="group{{group.group.pk}}">Новая Группа</a>
+            <script>
+                $('#group{{group.group.pk}}').on("click", function(){
+                    $('#char_container').parent().load("{% url 'group_edit' parms.character.pk -1 %}")
+                });
+            </script>
+
+    </div>
+    <div class="group" id="infsets">
+        <div>Блоки Влияния</div>
+        {% for infset in parms.infsets %}
             <div class="cp_tooltip">
-                {{ form.name.initial }}
-                    {{ form.value }}
-                    <span class="char_buttons" cost="{{ cost }}" initial="{{ form.value.initial }}">
-                        <button type="button" class="btn btn-success btn-number btnplus" data-type="plus" data-field="quant[2]">
-                        +
-                        </button>
-                        <button type="button" class="btn btn-danger btn-number btnminus"  disabled data-type="minus" data-field="quant[2]">
-                        -
-                        </button>
-                    </span>
-                <span class="cp_tooltiptext">{{ form.flavour.initial }}</span>
+                {{infset.DELETE}}<a id="infset{{infset.pk}}">{{ infset.reference }}</a>
+                <div class="cp_tooltiptext">
+                    {% for key, affect in infset.affected_string.items %}
+                    <p>{{key}}: +{{affect}}</p>
+                    {% endfor %}
+                </div>
+            </div>
+            <script>
+                $('#infset{{infset.pk}}').on("click", function(){
+                    $('#char_container').parent().load("{% url 'inf_set_edit' parms.character.pk infset.pk %}");
+                });
+            </script>
+        {% endfor %}
+        <a id="new_inf_set">Добавить</a>
+        <script>
+            $('#new_inf_set').on("click", function(){
+                $('#char_container').load("{% url 'inf_set_edit' parms.character.pk -1%}");
+            });
+        </script>
+    </div>
+    <div class="group" id="items_container">
+        {{ parms.itemformset.management_form }}
+        <div class="cp_tooltip">
+            <div>Инвентарь</div>
+            <button id="add-item" class="btn btn-success btn-number btnplus" type="button">+</button>
+            <script type="text/html" id="items-template">
+                <fieldset class="items-__prefix__" style="display: none;">
+                    <div id="item">
+                        {{ parms.itemformset.empty_form.id }}
+                        {{ parms.itemformset.empty_form.DELETE }}{{ parms.itemformset.empty_form.name }}
+                            {{ parms.itemformset.empty_form.flavour }}
+                        {{ parms.itemformset.empty_form.count }}
+                        {{ parms.itemformset.empty_form.is_active}}
+                        {{ parms.itemformset.empty_form.item }}
+                    </div>
+                </fieldset>
+            </script>
+            <script>
+                $('#add-item').djangoInlineFormAdd({
+                    prefix: "{{ parms.itemformset.prefix }}",
+                    deleteButtonId: "#delete-item",
+                    containerId: "#items",
+                    templateId: "#items-template",
+                });
+            </script>
+        </div>
+        <div id = "items">
+        {% for form in parms.itemformset %}
+        <div class="item">
+            {{ form.id }}
+            <div class="cp_tooltip">{{ form.DELETE }}{{ form.name }}
+                <div class="cp_tooltiptext item_text">
+                    {{ form.flavour }}
+                </div>
+            </div>
+            {{ form.count }}
+            {{ form.is_active}}
+            {{ form.item }}
+        </div>
+        {% endfor %}
+        </div>
+    </div>
+    
+    <div class="group" id="status_container">
+        {{ parms.statusformset.management_form }}
+        <div class="cp_tooltip">
+            <div>Статусы</div>
+            <button id="add-status" class="btn btn-success btn-number btnplus" type="button">+</button>
+            <script type="text/html" id="status-template">
+                <fieldset class="status-__prefix__" style="display: none;">
+                    <div class="status">
+                        {{ parms.statusformset.empty_form.id }}
+                        {{ parms.statusformset.empty_form.DELETE }}{{ parms.statusformset.empty_form.name }}
+                        {{ parms.statusformset.empty_form.visible }}
+                        {{ parms.statusformset.empty_form.turns }}
+                        {{ parms.statusformset.empty_form.item}}
+                    </div>
+                </fieldset>
+            </script>
+            <script>
+                $('#add-status').djangoInlineFormAdd({
+                    prefix: "{{ parms.statusformset.prefix }}",
+                    deleteButtonId: "#delete-item",
+                    containerId: "#statuses",
+                    templateId: "#status-template",
+                });
+            </script>
+        </div>
+        <div id = "statuses">
+        {% for form in parms.statusformset %}
+        <div id="status">
+            {{ form.id }}
+            {{ form.DELETE }}{{ form.name }}
+            {{ form.visible}}
+            {{ form.turns}}
+            {{ form.item }}
+        </div>
+        {% endfor %}
+        </div>
+    </div>
+{% else %}
+    <div class="group" id="items_container">
+        <div>Инвентарь</div>
+        <div id="items">
+            {% for item in parms.items %}
+            <div class="item cp_tooltip">
+                {{item.is_active}}{{ item.name }}x{{item.count}}
+                <div class="cp_tooltiptext">
+                    {{item.flavour}}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    <div class="group" id="status_container">
+        <div>Статусы</div>
+        <div id = "statuses">
+        {% for status in parms.status %}
+        <div id="status">
+            <div class="cp_tooltip">
+            {{ status.name }}
+            <div class="cp_tooltiptext">
+                {% for key, value in status.affected_string.items %}
+                    <p>{{ key }}: +{{value}}</p>
+                {% endfor %}
+            </div>
             </div>
         </div>
         {% endfor %}
         </div>
     </div>
-{% endfor %}
+{% endif %}
+
     <script>
 
-        $('.btnplus').each(function(){
+        $('fieldset .btnplus').each(function(){
             exp = +$('#exp').html();
-            cost=+$(this).parent().attr("cost");
+            cost=+$('#'+$(this).attr("anc")).attr("cost");
             if (exp-cost<0) {
                 $(this).attr("disabled", true);
             } else {
                 $(this).attr("disabled", false);
             }
          });
-      $('.btnplus').on("click", function(){
+      $('fieldset .btnplus').on("click", function(){
         exp = +$('#exp').html();
-        initial = +$(this).parent().attr("initial");
-        cost = +$(this).parent().attr("cost");
-        val = +$(this).parent().prev().val();
+        initial = +$('#'+$(this).attr("anc")).attr("initial");
+        cost = +$('#'+$(this).attr("anc")).attr("cost");
+        val = +$('#'+$(this).attr("anc")+' input[type=number]').val();
         if (exp-cost < 0) {
             return true
         }
         $('#exp').html(exp-cost);
-        $(this).parent().prev().val(val+1);
-        $('.btnplus').each(function(){
+        $('#'+$(this).attr('anc')+' input[type=number]').val(val+1);
+        $('fieldset .btnplus').each(function(){
             exp = +$('#exp').html();
-            cost=+$(this).parent().attr("cost");
+            cost=+$('#'+$(this).attr("anc")).attr("cost");
             if (exp-cost<0) {
                 $(this).attr("disabled", true);
             } else {
                 $(this).attr("disabled", false);
             }
          });
-        $('.btnminus').each(function() {
-            if ($(this).parent().prev().val()==$(this).parent().attr("initial")) {
+        $('fieldset .btnminus').each(function() {
+            if ($('#'+$(this).attr('anc')+' input[type=number]').val()==$('#'+$(this).attr('anc')).attr('initial')) {
                 $(this).attr("disabled", true);
             } else {
                 $(this).attr("disabled", false);
             }
         });
+        $('.btnadd').each(function(){
+                                exp = +$('#exp').html();
+                                cost = +$(this).attr("cost");
+                                if (exp-cost<0) {
+                                    $(this).attr("disabled", true);
+                                } else {
+                                    $(this).attr("disabled", false);
+                                }
+                            });
 
       });
       $('.btnminus').on("click", function(){
         exp = +$('#exp').html();
-        initial = +$(this).parent().attr("initial");
-        cost = +$(this).parent().attr("cost");
-        val = +$(this).parent().prev().val();
+        initial = +$('#'+$(this).attr("anc")).attr("initial");
+        cost = +$('#'+$(this).attr("anc")).attr("cost");
+        val = +$('#'+$(this).attr("anc")+' input[type=number]').val();
         if (val<=initial) {
             return true;
         }
         $('#exp').html(exp+cost);
-        $(this).parent().prev().val(val-1);
-        $('.btnplus').each(function(){ exp = +$('#exp').html(); cost=+$(this).parent().attr("cost"); if (exp-cost<0) {$(this).attr("disabled", true); } });
-        if ($(this).parent().prev().val()==$(this).parent().attr("initial")) {
+        $('#'+$(this).attr("anc")+' input[type=number]').val(val-1);
+        $('.btnplus').each(function(){ exp = +$('#exp').html(); cost=+$('#'+$(this).attr("anc")).attr("cost"); if (exp-cost<0) {$(this).attr("disabled", true); } else {$(this).attr("disabled", false); }});
+        if ($('#'+$(this).attr("anc")+' input[type=number]').val()==$('#'+$(this).attr("anc")).attr("initial")) {
             $(this).attr("disabled", true);
         } else {
             $(this).attr("disabled", false);
         }
+        $('.btnadd').each(function(){
+                                exp = +$('#exp').html();
+                                cost = +$(this).attr("cost");
+                                if (exp-cost<0) {
+                                    $(this).attr("disabled", true);
+                                } else {
+                                    $(this).attr("disabled", false);
+                                }
+                            });
       });
-      $('#charparms input[type=number]').attr("disabled", true)
+      $('.group input[type=number]').attr("disabled", true)
       $("#charparms").submit(function(e) {
         $('#charparms :input:not(button)').each(function(){$(this).attr("disabled", false)});
         var url = $("#charparms").attr('action');

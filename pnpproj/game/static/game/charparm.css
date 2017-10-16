@@ -3,10 +3,11 @@
     flex-basis: 0;
     flex-direction: row;
     flex-grow: true;
+    position: relative;
 }
-.charparm div input[type=number] {
+.charparm input[type=number] {
     border: 0;
-    width: 50px;
+    width: 3vw;
     text-align: center;
     background-color: transparent;
 }
@@ -15,20 +16,22 @@
     display: none;
 }
 
-.charparm div .btnplus {
-    width:20px;
-    height:20px;
+.btnplus {
+    width:1vw;
+    height:1vw;
     padding: 0;
 }
 
-.charparm div .char_buttons {
+.char_buttons {
+    width: 1vw;
     display: flex;
     flex-direction: column;
     float:right
 }
 
-.charparm div .btnminus {
-    width:20px;
-    height:20px;
+.btnminus {
+    width:1vw;
+    height:1vw;
     padding:0px;
 }
+

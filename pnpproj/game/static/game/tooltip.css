@@ -13,11 +13,16 @@
 
     /* Position the tooltip */
     position: absolute;
-    left: 200px;
+    left: 50px;
     width: 200px;
     z-index: 1;
 }
 
 .cp_tooltip:hover .cp_tooltiptext {
     visibility: visible;
+}
+
+.item_text {
+    width: 198px;
+    align-self: center;
 }

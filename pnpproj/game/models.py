@@ -93,8 +93,46 @@ class CharParm(models.Model):
     override_cost = models.IntegerField(default=-1)
     affected_by = models.ManyToManyField('self', symmetrical=False)
 
-    def true_value(self):
-        return 0  # to fix. how we display the value after items and shit.
+    def __str__(self):
+        return self.group.name+'/'+self.name
+
+    def true_value(self, root=list()):
+        val = self.value
+        if self.name in root:
+            return self.value
+        root.append(self.name)
+        for aff in self.affected_by.all():
+            val += int(aff.true_value(root))
+        influences = Influence.objects.filter(infset__character=self.character).filter(affects=self).all()
+        for inf in influences:
+            item = Item.objects.filter(item=inf.infset).first()
+            status = Status.objects.filter(item=inf.infset).first()
+            append_val = 0
+            if item is not None:
+                append_val = inf.value
+            elif status is not None:
+                if status.visible:
+                    append_val = inf.value
+                else:
+                    append_val = 0
+            val += int(append_val)
+        return val  # to fix. how we display the value after items and shit.
+
+    @property
+    def affected_string(self):
+        textlist = dict()
+        for aff in self.affected_by.all():
+            textlist[aff.name] = aff.true_value()
+        influences = Influence.objects.filter(infset__character=self.character).filter(affects=self).all()
+        for inf in influences:
+            item = Item.objects.filter(item=inf.infset).first()
+            status = Status.objects.filter(item=inf.infset).first()
+            if item is not None:
+                textlist[item.name] = inf.value
+            elif status is not None:
+                if status.visible:
+                    textlist[status.name] = inf.value
+        return textlist
 
     def roll(self):
         return 0  # to fix. rolls shit.
@@ -118,39 +156,103 @@ class CharParm(models.Model):
         return instance
 
     def save(self, *args, **kwargs):
-        if not self._state.adding:
-            cost = self.override_cost if self.override_cost>-1 else self.group.cost
+        if not self._state.adding and hasattr(self, '_loaded_values'):
+            cost = self.override_cost if self.override_cost > -1 else self.group.cost
             self.character.experience -= (self.value-self._loaded_values['value'])*cost
             self.character.save()
         else:
-            cost = self.group.cost_to_add
+            cost = self.group.cost_to_add if self.group.cost_to_add > -1 else 0
             self.character.experience -= cost
             self.character.save()
         super(CharParm, self).save(*args, **kwargs)
 
 
 class InfSet(models.Model):
-    reference = models.CharField(max_length=25)
+    character = models.ForeignKey(Character)
+    reference = models.CharField(max_length=250)
 
+    def affected_string(self):
+        affects = Influence.objects.filter(infset=self).all()
+        aff_list = dict()
+        for aff in affects:
+            aff_list[aff.affects.name] = aff.value
+        return aff_list
+
+    def __str__(self):
+        return self.reference
 
 class Status(models.Model):
     character = models.ForeignKey(Character, on_delete=models.CASCADE)
     item = models.ForeignKey(InfSet, on_delete=models.CASCADE)
+    name = models.CharField(max_length=25)
     turns = models.IntegerField(blank=True)
+
+    def affected_string(self):
+        if not self.visible:
+            return '???'
+        affects = Influence.objects.filter(infset=self.item).all()
+        aff_list = dict()
+        for aff in affects:
+            aff_list[aff.affects.name] = aff.value
+        return aff_list
+
 
 
 class Item(models.Model):
     character = models.ForeignKey(Character, on_delete=models.CASCADE)
-    item = models.ForeignKey(InfSet, on_delete=models.CASCADE, blank=True)
+    item = models.ForeignKey(InfSet, on_delete=models.CASCADE, blank=True, null=True)
     name = models.CharField(max_length=50)
+    flavour = models.CharField(max_length=50, blank=True)
     is_active = models.BooleanField(default=False)
     count = models.IntegerField(default=1)
 
+    def affected_string(self):
+        affects = Influence.objects.filter(infset=self.item).all()
+        aff_list = dict()
+        for aff in affects:
+            aff_list[aff.affects.name] = aff.value
+        return aff_list
 
 class Influence(models.Model):
     affects = models.ForeignKey(CharParm, on_delete=models.CASCADE)
     value = models.IntegerField()
     infset = models.ForeignKey(InfSet, on_delete=models.CASCADE)
+
+
+class Action(models.Model):
+    game = models.ForeignKey(Game)
+    char = models.ForeignKey(Character, null=True)
+    action = models.CharField(max_length=5000)
+    phrase = models.CharField(max_length=5000)
+    language = models.ForeignKey(Languages)
+    response = models.CharField(max_length=5000)
+    finished = models.BooleanField(default=False)
+
+class Roll(models.Model):
+    type_pass = 'PASS'
+    type_surpass = 'SURPASS'
+    types = (
+        (type_pass, 'Сложность'),
+        (type_surpass, 'Больше на __')
+    )
+    action = models.ForeignKey(Action)
+    parm = models.CharField(max_length=250)
+    type = models.CharField(max_length=15, choices=types, default=type_pass)
+    dice = models.IntegerField(default=0)
+    parm_bonus = models.IntegerField(default=0)
+    free_bonus = models.IntegerField(default=0)
+    difficulty = models.IntegerField(default=0)
+
+
+class RollVisibility(models.Model):
+    roll = models.ForeignKey(Roll)
+    player = models.ForeignKey(Players)
+    visible_dice = models.BooleanField()
+    visible_parm_bonus = models.BooleanField()
+    visible_free_bonus = models.BooleanField()
+    visible_difficulty = models.BooleanField()
+    visible_result = models.BooleanField()
+
 
 
 
@@ -321,3 +423,4 @@ def populate_parms(sender, instance, created, *args, **kwargs):
         composure.save()
         composure.affected_by.add(willpower)
         composure.save()
+

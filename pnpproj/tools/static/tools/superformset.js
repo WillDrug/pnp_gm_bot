@@ -1,6 +1,8 @@
 /*
   django-inline-formset.js
+
   @author Benjamin W Stookey
+
   https://github.com/jamstooks/jquery-django-inline-form
 */
 !function($) {

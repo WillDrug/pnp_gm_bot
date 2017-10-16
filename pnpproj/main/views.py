@@ -102,18 +102,28 @@ def switch_game(request, **kwargs):
     return redirect(reverse('game_index'))
 
 
-def add_languages(request):
+def add_languages(request): #also edit groups
     LanguageFormSet = inlineformset_factory(Setting, Languages, fields=('name',), extra=0)
+    ParmGroupFormSet = inlineformset_factory(Setting, ParmGroup, fields=('name', 'flavour', 'cost_to_add', 'cost'),
+                                             extra=0)
+
     setting_to_edit = Setting.objects.filter(pk=request.GET['setting']).first()
     if setting_to_edit is None:
         return redirect(reverse('game_index'))
     if setting_to_edit.owner != request.user:
         return HttpResponse('fuck you')
     if request.method == 'POST' and request.POST.get('add_lang') == 'true':
-        formset = LanguageFormSet(request.POST, request.FILES, instance=setting_to_edit)
+        formset = LanguageFormSet(request.POST, request.FILES, instance=setting_to_edit, prefix='langs')
+        grpformset = ParmGroupFormSet(request.POST, instance=setting_to_edit, prefix='groups')
         if formset.is_valid():
             formset.save()
-            formset = LanguageFormSet(instance=setting_to_edit) #reload
+            formset = LanguageFormSet(instance=setting_to_edit, prefix='langs') #reload
+        if grpformset.is_valid():
+            grpformset.save()
+            grpformset = ParmGroupFormSet(instance=setting_to_edit, prefix='groups')
     else:
-        formset = LanguageFormSet(instance=setting_to_edit)
-    return render(request, 'main/add_languages.html', {'formset': formset, 'menu': generate_menu(request)})
+        formset = LanguageFormSet(instance=setting_to_edit, prefix='langs')
+        grpformset = ParmGroupFormSet(instance=setting_to_edit, prefix='groups')
+    return render(request, 'main/add_languages.html', {'formset': formset,
+                                                       'groupformset': grpformset,
+                                                       'menu': generate_menu(request)})

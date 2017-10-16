@@ -1,0 +1,59 @@
+{% load static %}
+<script src="{% static 'tools/superformset.js' %}"></script>
+<link rel="stylesheet" type="text/css" href="{% static 'game/model_edit.css' %}" />
+<div id="infsets_container">
+    <form method="POST" id="inf_form" action="{{ action }}">
+    <a id="return">Вернуться</a>
+    <script>
+        $('#return').on("click", function(){
+            $('#infsets_container').parent().load("{% url 'char_edit' character.pk %}")
+        });
+    </script>
+        {% csrf_token %}<br>
+        <input type="checkbox" name="DELETE" placeholder="удалить">
+        {{ setform }}
+        <div id="errors">
+            {% for error in errors %}
+            {{ error }}
+            {% endfor %}
+        </div>
+        {{ formset.management_form }}
+        <script type="text/html" id="blank_form">
+            <fieldset class="hidden">
+                {{formset.empty_form.as_p}}
+            </fieldset>
+        </script>
+        <div id="infset">
+            {% for form in formset %}
+            <div class="influence">
+                {{ form.as_p }}
+            </div>
+            {% endfor %}
+        </div>
+        <button type="button" id="add-inf">Добавить</button>
+        <button type="button" id="delete-inf">Удалить</button>
+        <button type="submit" id="submit_inf">Готово</button>
+        <script>
+            $('#add-inf').djangoInlineFormAdd({
+                prefix: "{{ formset.prefix }}",
+                deleteButtonId: "#delete-inf",
+                containerId: "#infset",
+                templateId: "#blank_form",
+            });
+            $("#inf_form").submit(function(e) {
+                var url = $("#inf_form").attr('action');
+                $.ajax({
+                    type: "POST",
+                    url: url,
+                    data: $("#inf_form").serialize(), // serializes the form's elements.
+                    success: function(data)
+                    {
+                        $('#infsets_container').parent().html(data)
+                    }
+                });
+            e.preventDefault(); // avoid to execute the actual submit of the form.
+            });
+        </script>
+    </form>
+    </div>
+</div>
