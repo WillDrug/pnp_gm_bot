@@ -3,13 +3,12 @@ from django.http import HttpRequest, HttpResponse
 from django.contrib.auth.models import User
 from game.models import Character, CharParm, Influence, InfSet, Item, Status, ParmGroup, Players, Setting, Game, \
     Languages, Scene
-from game.forms import BaseCharForm, GMCharForm, ItemForm, StatusForm, InfSetForm, ParmGroupForm, GroupInlineForm
+from game.forms import BaseCharForm, GMCharForm, ItemForm, StatusForm, InfSetForm, ParmGroupForm, GroupInlineForm, SceneForm
 from django.contrib.auth.decorators import login_required
 from django.urls import reverse
 from django.forms import inlineformset_factory, modelformset_factory
 from annoying.decorators import ajax_request
-
-
+from datetime import timezone, datetime, timedelta
 # functions
 
 def authenticate_by_char(user, char):
@@ -20,13 +19,15 @@ def authenticate_by_char(user, char):
 
 
 def new_character(user):
-    game = Game.objects.filter(invite=user.first_name).first()
+    game = get_game(user)
     owner = user
     newchar = Character(owner=owner, game=game,
                         experience=0)
     newchar.save()
     return newchar
 
+def get_game(user):
+    return Game.objects.filter(invite=user.first_name).first()
 
 @login_required(redirect_field_name='index')
 def game_main(request):
@@ -46,15 +47,16 @@ def player(request, game, **kw):
     if character is None:
         character = new_character(request.user)
     char_parms = char_edit(request, initial=True, character=character.pk)
-
+    scene_parms = scenes(request, initial=True, scene=character.scene.pk)
     return render(request, 'game/game.html',
-                  dict(game=game, gm=False, char_parms=char_parms))
+                  dict(game=game, gm=False, char_parms=char_parms, scene_parms=scene_parms))
 
 
 def gm(request, game, **kw):
     char_list_parms = char_list(request, initial=True)
+    scene_parms = scenes(request, initial=True, scene='-1')
     return render(request, 'game/game.html',
-                  dict(game=game, gm=True, char_list_parms=char_list_parms))
+                  dict(game=game, gm=True, char_list_parms=char_list_parms, scene_parms=scene_parms))
 
 
 @login_required(redirect_field_name='index')
@@ -142,7 +144,7 @@ def char_edit(request, **kw):
     else:
         return render(request, 'game/char.html', parms)
 
-
+@ajax_request
 @login_required(redirect_field_name='index')
 def base_char_edit(request, **kw):
     char = Character.objects.filter(pk=kw.pop('character')).first()
@@ -153,12 +155,14 @@ def base_char_edit(request, **kw):
         parms['form'] = BaseCharForm(request.POST, instance=char)
         if parms['form'].is_valid():
             parms['form'].save()
+            return dict(reload=True, id="char_container", url=reverse('char_edit', kwargs=dict(character=char.pk)))
     else:
         parms['form'] = BaseCharForm(instance=char)
     parms['title'] = 'Редактировать Персонажа'
     parms['deletable'] = False
     return render(request, 'tools/modal.html', parms)
 
+@ajax_request
 def inf_set_edit(request, **kw):
     character = kw.pop('character')
     character = Character.objects.filter(pk=character).first()
@@ -170,32 +174,34 @@ def inf_set_edit(request, **kw):
         set.save()
     else:
         set = InfSet.objects.filter(pk=set).first()
-    InfluenceFormSet = inlineformset_factory(InfSet, Influence, extra=0, fields=('affects', 'value'))
+    InfluenceFormSet = inlineformset_factory(InfSet, Influence, extra=0, fields=('affects', 'value', 'visible'))
     errors = list()
     if request.method == 'POST':
-        if request.POST.get('DELETE'):
+        if request.POST.get('DELETE') == 'true':
             set.delete()
-            return redirect(reverse('char_edit', kwargs=dict(character=character.pk)))
-        setform = InfSetForm(request.POST, instance=set, prefix='infset')
-        formset = InfluenceFormSet(request.POST, instance=set, prefix='influences')
-        if setform.is_valid(character=character):
-            setform.save()
+            return dict(reload=True, id="char_container", url=reverse('char_edit', kwargs=dict(character=character.pk)))
         else:
-            errors.append(setform.errors)
-        if formset.is_valid():
-            influences = formset.save(commit=False)
-            for inf in influences:
-                inf.character = character
-                inf.save()
-            for deleted in formset.deleted_objects:
-                deleted.delete()
-        else:
-            errors.append(formset.errors)
-        if errors.__len__() == 0:
-            return redirect(reverse('char_edit', kwargs=dict(character=character.pk)))
+            setform = InfSetForm(request.POST, instance=set, prefix='infset')
+            formset = InfluenceFormSet(request.POST, instance=set, prefix='influences')
+            if setform.is_valid(character=character):
+                setform.save()
+            else:
+                errors.append(setform.errors)
+            if formset.is_valid():
+                influences = formset.save(commit=False)
+                for inf in influences:
+                    inf.character = character
+                    inf.save()
+                for deleted in formset.deleted_objects:
+                    deleted.delete()
+            else:
+                errors.append(formset.errors)
+            if errors.__len__() == 0:
+                return dict(reload=True, id="char_container", url=reverse('char_edit', kwargs=dict(character=char.pk)))
     setform = InfSetForm(instance=set, prefix='infset')
     formset = InfluenceFormSet(instance=set, prefix='influences')
-    return render(request, 'game/infsets.html', dict(setform=setform,
+    return render(request, 'game/infsets.html', dict(deletable=True,
+                                                     setform=setform,
                                                      formset=formset,
                                                      character=character,
                                                      errors=errors,
@@ -207,7 +213,7 @@ def inf_set_edit(request, **kw):
 def group_edit(request, **kw):
     character = kw.pop('character')
     character = Character.objects.filter(pk=character).first()
-    if not authenticate_by_char(request.user, character):
+    if not character.game.setting.owner == request.user:
         return HttpResponse('BULLSHIT')
     grp = kw.pop('group')
     if grp == '-1':
@@ -247,6 +253,94 @@ def group_edit(request, **kw):
                                                      action=reverse('group_edit',
                                                                     kwargs=dict(character=character.pk, group=grp.pk))
                                                      ))
+def calc_online(seen):
+    return True if (datetime.now(timezone.utc) - seen) < timedelta(minutes=5) else False
+
+@ajax_request
+def scenes_online(request, **kw):
+    game = get_game(request.user)
+    scene = Scene.objects.filter(pk=kw.pop('scene')).first()
+    requested_player = Players.objects.filter(game=game).filter(user=request.user).first()
+    if requested_player is not None:
+        requested_player.last_seen = datetime.utcnow()
+        requested_player.save()
+    characters = Character.objects.filter(game=game).filter(scene=scene).all()
+    ajax_object = dict(online=list())
+    for char in characters:
+        player = Players.objects.filter(game=game).filter(user=char.owner).first()
+        ajax_tmp = dict(
+            char=char.pk,
+            active=calc_online(player.last_seen)
+        )
+        ajax_object['online'].append(ajax_tmp)
+    return ajax_object
+
+def scenes(request, **kw):
+    try:
+        initial = kw.pop('initial')
+    except KeyError:
+        initial = False
+    scene = kw.pop('scene')
+    if scene == '-1':
+        scene = None
+    else:
+        scene = Scene.objects.filter(pk=scene).first()
+
+    parms = dict(parms=dict())
+    game = get_game(request.user)
+    if game.setting.owner == request.user:
+        parms['parms']['gm'] = True
+        parms['parms']['scenes'] = Scene.objects.filter(game=game).all()
+    else:
+        parms['parms']['gm'] = False
+    requested_player = Players.objects.filter(game=game).filter(user=request.user).first()
+    if requested_player is not None:
+        requested_player.last_seen = datetime.utcnow()
+        requested_player.save()
+    if scene is not None:
+        if scene.game.invite != request.user.first_name:
+            return HttpResponse('BULLSHIT!!!')
+        else:
+            parms['parms']['scene'] = scene
+        characters = Character.objects.filter(game=game).filter(scene=scene).all()
+        parms['parms']['chars'] = list()
+        for char in characters:
+            player = Players.objects.filter(game=game).filter(user=char.owner).first()
+            parms['parms']['chars'].append(dict(
+                char=char,
+                online=calc_online(player.last_seen)
+            ))
+
+    if initial:
+        return parms
+    else:
+        return render(request, 'game/scenes.html', parms)
+
+@ajax_request
+def scene_edit(request, **kw):
+    game = get_game(request.user)
+    if game.setting.owner != request.user:
+        return HttpResponse('BULLSHITTT!')
+    scene = kw.pop('scene')
+    if scene == '-1':
+        scene = Scene(game=game, name='Новая сцена', flavour='Описание')
+        scene.save()
+    else:
+        scene = Scene.objects.filter(pk=int(scene)).first()
+    if request.method == 'POST':
+        if request.POST.get('DELETE') == 'true':
+            scene.delete()
+            return dict(reload=True, id="scenes", url=reverse('scenes', kwargs=dict(scene='-1')))
+        form = SceneForm(request.POST, instance=scene)
+        if form.is_valid():
+            form.save()
+            return dict(reload=True, id="scenes", url=reverse('scenes', kwargs=dict(scene=scene.pk)))
+    parms = dict()
+    parms['form'] = SceneForm(instance=scene)
+    parms['title'] = 'Редактировать Персонажа'
+    parms['deletable'] = True
+    parms['action_url'] = reverse('scene_edit', kwargs=dict(scene=scene.pk))
+    return render(request, 'tools/modal.html', parms)
 
 @ajax_request
 def action_log(request, initial=False):

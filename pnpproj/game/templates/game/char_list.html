@@ -28,17 +28,11 @@ SOME_LINKS
     </table>
     <input type="submit" value="LOLZ">
 </form>
-    <div class="center"><button data-toggle="modal" data-target="#squarespaceModal" class="btn btn-primary center-block">Click Me</button></div>
 
-<a id="test">test load-n-click</a>
 <script>
     $(".char_edit_link").on("click", function(e) {
         $('#char_list_container').parent().load($(this).attr("href"));
         return false;
-    });
-
-    $("#test").on("click", function(e) {
-        $("#modal_content").load("http://127.0.0.1:31337/game/base_char_edit/1");
     });
     $("#char_list").submit(function(e) {
         var url = $("#char_list").attr('action');
@@ -54,10 +48,4 @@ SOME_LINKS
         e.preventDefault(); // avoid to execute the actual submit of the form.
     });
 </script>
-</div>
-<div class="modal fade" id="squarespaceModal" tabindex="-1" role="dialog" aria-labelledby="modalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content" id="modal_content">
-        </div>
-    </div>
 </div>

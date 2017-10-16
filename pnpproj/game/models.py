@@ -37,7 +37,8 @@ class Scene(models.Model):
     name = models.CharField(max_length=50)
     flavour = models.CharField(max_length=2000)
 
-
+    def __str__(self):
+        return self.name
 
 class Languages(models.Model):
     setting = models.ForeignKey(Setting, blank=False, on_delete=models.CASCADE)
@@ -53,7 +54,7 @@ class Languages(models.Model):
 class Players(models.Model):
     game = models.ForeignKey(Game, on_delete=models.CASCADE)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    last_seen = models.DateTimeField(auto_now=True)
+    last_seen = models.DateTimeField(auto_now_add=True)
 
 
 class Character(models.Model):
@@ -65,7 +66,7 @@ class Character(models.Model):
     flavour = models.CharField(max_length=250, blank=True, default='')
     experience = models.IntegerField(default=0)
     levelup = models.BooleanField(default=False)
-    scene = models.ForeignKey(Scene, blank=True, null=True, on_delete=models.PROTECT)
+    scene = models.ForeignKey(Scene, blank=True, null=True, on_delete=models.SET_NULL)
     pause = models.BooleanField(default=False)
     languages = models.ManyToManyField(Languages)
 
@@ -96,6 +97,19 @@ class CharParm(models.Model):
     def __str__(self):
         return self.group.name+'/'+self.name
 
+    def roll_bonus(self, root=list()):
+        val = self.value
+        if self.name in root:
+            return self.value
+        root.append(self.name)
+        for aff in self.affected_by.all():
+            val += int(aff.roll_bonus(root))
+        influences = Influence.objects.filter(infset__character=self.character).filter(affects=self).all()
+        for inf in influences:
+            val += int(inf.value)
+        return val
+
+
     def true_value(self, root=list()):
         val = self.value
         if self.name in root:
@@ -103,27 +117,19 @@ class CharParm(models.Model):
         root.append(self.name)
         for aff in self.affected_by.all():
             val += int(aff.true_value(root))
-        influences = Influence.objects.filter(infset__character=self.character).filter(affects=self).all()
+        influences = Influence.objects.filter(infset__character=self.character).filter(affects=self).\
+            filter(visible=True).all()
         for inf in influences:
-            item = Item.objects.filter(item=inf.infset).first()
-            status = Status.objects.filter(item=inf.infset).first()
-            append_val = 0
-            if item is not None:
-                append_val = inf.value
-            elif status is not None:
-                if status.visible:
-                    append_val = inf.value
-                else:
-                    append_val = 0
-            val += int(append_val)
+            val += int(inf.value)
         return val  # to fix. how we display the value after items and shit.
 
-    @property
+
     def affected_string(self):
         textlist = dict()
         for aff in self.affected_by.all():
             textlist[aff.name] = aff.true_value()
-        influences = Influence.objects.filter(infset__character=self.character).filter(affects=self).all()
+        influences = Influence.objects.filter(infset__character=self.character).filter(affects=self).\
+            filter(visible=True).all()
         for inf in influences:
             item = Item.objects.filter(item=inf.infset).first()
             status = Status.objects.filter(item=inf.infset).first()
@@ -175,7 +181,10 @@ class InfSet(models.Model):
         affects = Influence.objects.filter(infset=self).all()
         aff_list = dict()
         for aff in affects:
-            aff_list[aff.affects.name] = aff.value
+            if aff.visible:
+                aff_list[aff.affects.name] = aff.value
+            else:
+                aff_list['???'] = '???'
         return aff_list
 
     def __str__(self):
@@ -185,43 +194,38 @@ class Status(models.Model):
     character = models.ForeignKey(Character, on_delete=models.CASCADE)
     item = models.ForeignKey(InfSet, on_delete=models.CASCADE)
     name = models.CharField(max_length=25)
-    turns = models.IntegerField(blank=True)
+    turns = models.IntegerField(blank=True, null=True)
 
     def affected_string(self):
-        if not self.visible:
-            return '???'
-        affects = Influence.objects.filter(infset=self.item).all()
-        aff_list = dict()
-        for aff in affects:
-            aff_list[aff.affects.name] = aff.value
+        aff_list = self.item.affected_string()
         return aff_list
 
 
 
 class Item(models.Model):
     character = models.ForeignKey(Character, on_delete=models.CASCADE)
-    item = models.ForeignKey(InfSet, on_delete=models.CASCADE, blank=True, null=True)
+    item = models.ForeignKey(InfSet, on_delete=models.SET_NULL, blank=True, null=True)
     name = models.CharField(max_length=50)
     flavour = models.CharField(max_length=50, blank=True)
     is_active = models.BooleanField(default=False)
     count = models.IntegerField(default=1)
 
     def affected_string(self):
-        affects = Influence.objects.filter(infset=self.item).all()
-        aff_list = dict()
-        for aff in affects:
-            aff_list[aff.affects.name] = aff.value
+        aff_list = self.item.affected_string()
         return aff_list
 
 class Influence(models.Model):
     affects = models.ForeignKey(CharParm, on_delete=models.CASCADE)
     value = models.IntegerField()
+    visible = models.BooleanField()
     infset = models.ForeignKey(InfSet, on_delete=models.CASCADE)
 
 
 class Action(models.Model):
     game = models.ForeignKey(Game)
     char = models.ForeignKey(Character, null=True)
+    scene = models.ForeignKey(Scene, null=True, on_delete=models.SET_NULL)
+    scene_name = models.CharField(max_length=250)
     action = models.CharField(max_length=5000)
     phrase = models.CharField(max_length=5000)
     language = models.ForeignKey(Languages)
@@ -236,7 +240,8 @@ class Roll(models.Model):
         (type_surpass, 'Больше на __')
     )
     action = models.ForeignKey(Action)
-    parm = models.CharField(max_length=250)
+    parm = models.ForeignKey(CharParm, on_delete=models.SET_NULL, null=True)
+    parm_name = models.CharField(max_length=250)
     type = models.CharField(max_length=15, choices=types, default=type_pass)
     dice = models.IntegerField(default=0)
     parm_bonus = models.IntegerField(default=0)

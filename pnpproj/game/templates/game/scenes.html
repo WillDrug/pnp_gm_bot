@@ -1,0 +1,70 @@
+<div id="scenes">
+    {% load static %}
+    <link rel="stylesheet" type="text/css" href="{% static 'game/scenes.css' %}" />
+    {% if parms.gm %}
+    <div class="panel with-nav-tabs panel-default">
+        <div class="panel-heading">
+            <ul class="nav nav-tabs">
+                {% for scene in parms.scenes %}
+                <li class="nav-item{% if parms.scene.pk == scene.pk %} active{% endif %}">
+                    <a id="scn{{scene.pk}}" class="nav-link">{{scene.name}}</a>
+                    {% if parms.scene.pk != scene.pk %}
+                    <script>
+                        $("#scn{{scene.pk}}").on("click", function(){
+                            $("#scenes").parent().load("{% url 'scenes' scene.pk %}")
+                        });
+                    </script>
+                    {% endif %}
+                </li>
+                {% endfor %}
+                <li class="nav-item">
+                    <a id="new_scene" class="nav-link">+</a>
+                    <script>
+                        $("#new_scene").on("click", function(){
+                            $("#modal_content").load("{% url 'scene_edit' -1 %}");
+                            $("#modal_show").click()
+                        });
+                    </script>
+                </li>
+            </ul>
+        </div>
+    {% endif %}
+        <div class="panel-body">
+            <div class="tab-content">
+                <div class="tab-pane active">
+                    <p>{{ parms.scene.name }}</p>
+                    <i>{{ parms.scene.flavour }}</i>
+                    <ul>
+                        {% for char in parms.chars %}
+                            <li><span id="char{{char.char.pk}}">{{char.online}}</span>: {{char.char}}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+            {% if parms.scene.pk %}
+            {% if parms.gm %}
+            <input type="button" id="del-scene" value="Редактировать">
+            <script>
+                $("#del-scene").on("click", function(){
+                     $("#modal_content").load("{% url 'scene_edit' parms.scene.pk %}");
+                     $("#modal_show").click()
+                });
+            </script>
+            {% endif %}
+            {% endif %}
+            <script>
+               setInterval(function() {
+                    $.ajax({
+                      type: "GET",
+                      url: "{% url 'update_online' parms.scene.pk %}",
+                      success: function(data) {
+                           $.each(data.online, function(key, value) {
+								$('#char'+value.char).html(value.active)
+                           });
+                      }
+                    });
+                }, 60000);
+            </script>
+        </div>
+    </div>
+</div>

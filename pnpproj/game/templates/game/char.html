@@ -1,4 +1,4 @@
-<div id="char_container">
+<div id="char_container" url="{% url 'char_edit' parms.character.pk %}">
 {% load static %}
 {% load extra_tags %}
     {% if parms.character.levelup %}
@@ -12,19 +12,27 @@
 <link rel="stylesheet" type="text/css" href="{% static 'game/charparm.css' %}" />
 <script src="{% static 'tools/superformset.js' %}"></script>
 
-    {{ parms.character.name }} [<span id="exp">{{ parms.character.experience }}</span>]
+    <a id="edit_char">{{ parms.character.name }}</a> [<span id="exp">{{ parms.character.experience }}</span>]
 <form method="POST" action="{{ parms.action_url }}" id="charparms">
+    {% if can_do %}
+    <script>
+        $('#edit_char').on("click", function(){
+            $("#modal_content").load("{% url 'base_char_edit' parms.character.pk %}");
+            $("#modal_show").click()
+        });
+    </script>
+    {% endif %}
 {% for group in parms.groups %}
     <div class="group" id="grp{{ group.charparm_formset.prefix }}">
         {% csrf_token %}
         {{ group.charparm_formset.management_form }}
         <div class="cp_tooltip">
-            <a id="group{{group.group.pk}}">{{ group.group.name }}</a>
+            <a id="group{{group.group.pk}}">{{ group.group.name }}</a>{% if parms.gm %}
             <script>
                 $('#group{{group.group.pk}}').on("click", function(){
                     $('#char_container').parent().load("{% url 'group_edit' parms.character.pk group.group.pk %}")
                 });
-            </script>
+            </script>{% endif %}
 
                 {% if group.group.cost_to_add > -1 and can_do %}
                 <button id="add-{{ group.group.pk }}" cost="{{group.group.cost_to_add}}" class="btn btn-success btn-number btnadd" type="button">+</button>
@@ -104,15 +112,6 @@
 {% endfor %}
 
 {% if parms.gm %}
-    <div class="group">
-            <a id="group{{group.group.pk}}">Новая Группа</a>
-            <script>
-                $('#group{{group.group.pk}}').on("click", function(){
-                    $('#char_container').parent().load("{% url 'group_edit' parms.character.pk -1 %}")
-                });
-            </script>
-
-    </div>
     <div class="group" id="infsets">
         <div>Блоки Влияния</div>
         {% for infset in parms.infsets %}
@@ -126,14 +125,16 @@
             </div>
             <script>
                 $('#infset{{infset.pk}}').on("click", function(){
-                    $('#char_container').parent().load("{% url 'inf_set_edit' parms.character.pk infset.pk %}");
+                    $("#modal_content").load("{% url 'inf_set_edit' parms.character.pk infset.pk %}");
+                    $("#modal_show").click()
                 });
             </script>
         {% endfor %}
         <a id="new_inf_set">Добавить</a>
         <script>
             $('#new_inf_set').on("click", function(){
-                $('#char_container').load("{% url 'inf_set_edit' parms.character.pk -1%}");
+               $("#modal_content").load("{% url 'inf_set_edit' parms.character.pk -1 %}");
+               $("#modal_show").click()
             });
         </script>
     </div>
@@ -342,4 +343,7 @@
     </script>
     <button type="submit" name="charparmssubmit" value="Сохранить">Сохранить</button>
 </form>
+
+
+
 </div>

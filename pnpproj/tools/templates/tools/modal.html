@@ -14,9 +14,7 @@
                 {{ item }}
             </div>
             {% endfor %}
-            {% if deletable %}
-            <input type="hidden" name="delete" value="false" id="deletable">
-            {% endif %}
+             <input type="hidden" name="DELETE" id="delete_flag" value="false">
         </form>
     {% endblock %}
 </div>
@@ -24,11 +22,11 @@
     <div class="btn-group btn-group-justified" role="group" aria-label="group button">
         {% if deletable %}
         <div class="btn-group btn-delete" role="group">
-            <button type="button" id="modal_delete" class="btn btn-default btn-hover-red" data-dismiss="modal"  role="button">{% block delete %}Удалить{% endblock %}</button>
+            <button type="button" name="DELETE" id="modal_delete" class="btn btn-default btn-hover-red" data-dismiss="modal"  role="button">{% block delete %}Удалить{% endblock %}</button>
         </div>
         {% endif %}
         <div class="btn-group" role="group">
-            <button type="button" id="modal_save" class="btn btn-default btn-hover-green" data-action="save" role="button">{% block save %}Сохранить{% endblock %}</button>
+            <button type="button" name="SAVE" id="modal_save" class="btn btn-default btn-hover-green" data-action="save" role="button">{% block save %}Сохранить{% endblock %}</button>
         </div>
     </div>
 </div>
@@ -44,8 +42,12 @@
            data: $("#modal_form").serialize(), // serializes the form's elements.
            success: function(data)
            {
-               $('#inner_content').parent().html(data)
-               $('#modal_close').click()
+               if (data.reload) {
+                    reload(data.id, data.url)
+                    $('#modal_close').click()
+               } else {
+                    $('#inner_content').parent().html(data)
+               }
            }
          });
 
@@ -56,7 +58,7 @@
     });
     {% if deletable %}
     $("#modal_delete").on("click", function(){
-        $("#deletable").val(true)
+        $("#delete_flag").attr("value", true)
         $("#modal_form").submit()
     });
     {% endif %}

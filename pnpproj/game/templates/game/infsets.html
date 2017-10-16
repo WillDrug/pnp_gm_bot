@@ -1,16 +1,13 @@
+{% extends 'tools/modal.html' %}
+{% block title %}Блоки Влияния{% endblock%}
+{% block form %}
 {% load static %}
 <script src="{% static 'tools/superformset.js' %}"></script>
 <link rel="stylesheet" type="text/css" href="{% static 'game/model_edit.css' %}" />
 <div id="infsets_container">
-    <form method="POST" id="inf_form" action="{{ action }}">
-    <a id="return">Вернуться</a>
-    <script>
-        $('#return').on("click", function(){
-            $('#infsets_container').parent().load("{% url 'char_edit' character.pk %}")
-        });
-    </script>
-        {% csrf_token %}<br>
-        <input type="checkbox" name="DELETE" placeholder="удалить">
+    <form method="POST" id="modal_form" action="{{ action }}">
+        {% csrf_token %}
+         <input type="hidden" name="DELETE" id="delete_flag" value="false">
         {{ setform }}
         <div id="errors">
             {% for error in errors %}
@@ -40,20 +37,8 @@
                 containerId: "#infset",
                 templateId: "#blank_form",
             });
-            $("#inf_form").submit(function(e) {
-                var url = $("#inf_form").attr('action');
-                $.ajax({
-                    type: "POST",
-                    url: url,
-                    data: $("#inf_form").serialize(), // serializes the form's elements.
-                    success: function(data)
-                    {
-                        $('#infsets_container').parent().html(data)
-                    }
-                });
-            e.preventDefault(); // avoid to execute the actual submit of the form.
-            });
         </script>
     </form>
     </div>
 </div>
+{% endblock %}

@@ -90,10 +90,9 @@ class ItemForm(forms.ModelForm):
 class StatusForm(forms.ModelForm):
     class Meta:
         model = Status
-        fields = ('name', 'item', 'visible', 'turns')
+        fields = ('name', 'item', 'turns')
     name = forms.CharField(widget=forms.TextInput(), label='')
     item = forms.ModelChoiceField(queryset=InfSet.objects.none(), label='')
-    visible = forms.BooleanField(required=False)
     turns = forms.IntegerField(required=False)
 
     def __init__(self, *ar, **kw):
@@ -136,9 +135,17 @@ class GroupInlineForm(forms.ModelForm):
     flavour = forms.CharField(widget=forms.Textarea, label='Описание')
     value = forms.IntegerField(label='Значение')
     override_cost = forms.IntegerField(label='Стоимость (-1 = стоимость группы)')
-    affected_by = forms.ModelMultipleChoiceField(queryset=CharParm.objects.none())
+    affected_by = forms.ModelMultipleChoiceField(queryset=CharParm.objects.none(), required=False)
 
     def __init__(self, *ar, **kw):
         character = kw.pop('character')
         super(GroupInlineForm, self).__init__(*ar, **kw)
         self.fields['affected_by'].queryset = CharParm.objects.filter(character=character).all()
+
+class SceneForm(forms.ModelForm):
+    class Meta:
+        model = Scene
+        fields = ('name', 'flavour')
+
+    name = forms.CharField(widget=forms.TextInput(), label='Название')
+    flavour = forms.CharField(widget=forms.Textarea(), label='Описание')
