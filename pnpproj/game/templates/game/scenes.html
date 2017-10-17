@@ -34,9 +34,9 @@
                 <div class="tab-pane active">
                     <p>{{ parms.scene.name }}</p>
                     <i>{{ parms.scene.flavour }}</i>
-                    <ul>
+                    <ul id="online">
                         {% for char in parms.chars %}
-                            <li><span id="char{{char.char.pk}}">{{char.online}}</span>: {{char.char}}</li>
+                            <li><span>{{char.online}}</span>: {{char.char}}</li>
                         {% endfor %}
                     </ul>
                 </div>
@@ -58,8 +58,9 @@
                       type: "GET",
                       url: "{% url 'update_online' parms.scene.pk %}",
                       success: function(data) {
+                           $('#online').html("")
                            $.each(data.online, function(key, value) {
-								$('#char'+value.char).html(value.active)
+								$('#online').append("<li><span>"+value.active+"</span>:"+value.name+"</li>");
                            });
                       }
                     });

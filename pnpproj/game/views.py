@@ -270,6 +270,7 @@ def scenes_online(request, **kw):
         player = Players.objects.filter(game=game).filter(user=char.owner).first()
         ajax_tmp = dict(
             char=char.pk,
+            name=char.name,
             active=calc_online(player.last_seen)
         )
         ajax_object['online'].append(ajax_tmp)
@@ -343,6 +344,27 @@ def scene_edit(request, **kw):
     return render(request, 'tools/modal.html', parms)
 
 @ajax_request
-def action_log(request, initial=False):
-
+def action_log(request): # LAST ID \\ NO ID \\ RELOAD ID
+    # cache last change. if last change is None - fart out 10 messages.
+    #
+    # roll from modal and reload
     return None
+
+# url /games/actions/<game>/<from>/
+# possible functions -- get one, get all, get from.
+# get all - html---\
+# get from - ajax --- not much different.
+# get one - ajax
+
+def get_action(request)
+
+@ajax_request
+def action_finish(request):
+    # get action ID from post + check authoritah
+    # in main html if not action.finished -> build a form from parms.
+    # submit here, get positive and hit reload
+    return True
+
+def roll(request):
+    # get action ID from url parms + check authoritah
+    return True
