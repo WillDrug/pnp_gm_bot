@@ -3,7 +3,7 @@ import hashlib
 import time
 
 from django import forms
-from game.models import Game, Setting, Character, Languages, ParmGroup, Scene, CharParm, Item, InfSet, Status
+from game.models import Game, Setting, Character, Languages, ParmGroup, Scene, CharParm, Item, InfSet, Status, Action, Roll, RollVisibility
 
 
 class NewSettingForm(forms.ModelForm):
@@ -149,3 +149,42 @@ class SceneForm(forms.ModelForm):
 
     name = forms.CharField(widget=forms.TextInput(), label='Название')
     flavour = forms.CharField(widget=forms.Textarea(), label='Описание')
+
+class GMActionForm(forms.ModelForm):
+    class Meta:
+        model = Action
+        fields = ('response',)
+
+    response = forms.CharField(widget=forms.Textarea())
+
+    def save(self, *ar, **kw):
+        self.instance.finished = True
+        super(GMActionForm, self).save(*ar, **kw)
+
+class PlayerActionForm(forms.ModelForm):
+    class Meta:
+        model = Action
+        fields = ('char', 'scene', 'action', 'phrase', 'language')
+
+    char = forms.HiddenInput()
+    scene = forms.HiddenInput()
+    action = forms.CharField(widget=forms.Textarea, label='Действие')
+    language = forms.ModelChoiceField(queryset=Languages.objects.none())
+    phrase = forms.CharField(widget=forms.Textarea, label='Речь')
+
+    # char+scene = on_save
+    # on init - language query
+    def __init__(self, *ar, **kw):
+
+
+
+    added = models.DateTimeField(auto_now_add=True)
+    game = models.ForeignKey(Game)
+    char = models.ForeignKey(Character, null=True)
+    scene = models.ForeignKey(Scene, null=True, on_delete=models.SET_NULL)
+    scene_name = models.CharField(max_length=250)
+    action = models.CharField(max_length=5000)
+    phrase = models.CharField(max_length=5000)
+    language = models.ForeignKey(Languages)
+    response = models.CharField(max_length=5000)
+    finished = models.BooleanField(default=False)

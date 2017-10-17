@@ -222,15 +222,20 @@ class Influence(models.Model):
 
 
 class Action(models.Model):
+    added = models.DateTimeField(auto_now_add=True)
     game = models.ForeignKey(Game)
     char = models.ForeignKey(Character, null=True)
     scene = models.ForeignKey(Scene, null=True, on_delete=models.SET_NULL)
     scene_name = models.CharField(max_length=250)
     action = models.CharField(max_length=5000)
-    phrase = models.CharField(max_length=5000)
-    language = models.ForeignKey(Languages)
-    response = models.CharField(max_length=5000)
+    phrase = models.CharField(max_length=5000, blank=True)
+    language = models.ForeignKey(Languages, null=True)
+    response = models.CharField(max_length=5000, blank=True)
     finished = models.BooleanField(default=False)
+
+    @property
+    def get_text(self):
+        return 'lol'
 
 class Roll(models.Model):
     type_pass = 'PASS'
@@ -239,6 +244,7 @@ class Roll(models.Model):
         (type_pass, 'Сложность'),
         (type_surpass, 'Больше на __')
     )
+    added = models.DateTimeField(auto_now_add=True)
     action = models.ForeignKey(Action)
     parm = models.ForeignKey(CharParm, on_delete=models.SET_NULL, null=True)
     parm_name = models.CharField(max_length=250)

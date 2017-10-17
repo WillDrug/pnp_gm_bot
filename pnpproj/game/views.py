@@ -2,8 +2,9 @@ from django.shortcuts import render, redirect
 from django.http import HttpRequest, HttpResponse
 from django.contrib.auth.models import User
 from game.models import Character, CharParm, Influence, InfSet, Item, Status, ParmGroup, Players, Setting, Game, \
-    Languages, Scene
-from game.forms import BaseCharForm, GMCharForm, ItemForm, StatusForm, InfSetForm, ParmGroupForm, GroupInlineForm, SceneForm
+    Languages, Scene, Action, Roll, RollVisibility
+from game.forms import BaseCharForm, GMCharForm, ItemForm, StatusForm, InfSetForm, ParmGroupForm, GroupInlineForm, \
+    SceneForm, GMActionForm
 from django.contrib.auth.decorators import login_required
 from django.urls import reverse
 from django.forms import inlineformset_factory, modelformset_factory
@@ -37,12 +38,12 @@ def game_main(request):
         request.user.save()
         return redirect(reverse('game_index'))
     if game.setting.owner == request.user:
-        return gm(request, game)
+        return gm_view(request, game)
     else:
-        return player(request, game)
+        return player_view(request, game)
 
 
-def player(request, game, **kw):
+def player_view(request, game, **kw):
     character = Character.objects.filter(owner=request.user).filter(game=game).first()
     if character is None:
         character = new_character(request.user)
@@ -52,7 +53,7 @@ def player(request, game, **kw):
                   dict(game=game, gm=False, char_parms=char_parms, scene_parms=scene_parms))
 
 
-def gm(request, game, **kw):
+def gm_view(request, game, **kw):
     char_list_parms = char_list(request, initial=True)
     scene_parms = scenes(request, initial=True, scene='-1')
     return render(request, 'game/game.html',
@@ -343,28 +344,73 @@ def scene_edit(request, **kw):
     parms['action_url'] = reverse('scene_edit', kwargs=dict(scene=scene.pk))
     return render(request, 'tools/modal.html', parms)
 
-@ajax_request
-def action_log(request): # LAST ID \\ NO ID \\ RELOAD ID
-    # cache last change. if last change is None - fart out 10 messages.
-    #
-    # roll from modal and reload
-    return None
 
-# url /games/actions/<game>/<from>/
-# possible functions -- get one, get all, get from.
-# get all - html---\
-# get from - ajax --- not much different.
-# get one - ajax
+def action_log(request, initial=False, **kw):
+    scene = Game.objects.filter(pk=kw.pop('scene')).first()
+    if scene is None:
+        return HttpResponse('BUUUUUUULLSHIIT')
+    player = Players.objects.filter(game=scene.game).filter(user=request.user).first()
+    if game.setting.owner = request.user:
+        gm = True
+    elif player is not None:
+        gm = False
+        player.last_seen = datetime.utcnow()
+        player.save()
+    else:
+        return HttpResponse('BULLLLLLSHIT')
+    parms = dict(parms=dict(
+        actions=list(),
+        include_container=True,
+    ))
+    last_id = request.GET.get('last_id')
+    get_id = request.GET.get('get_id')
+    if last_id is None and get_id is None: # first populate
+        if gm:
+            actions = Action.objects.filter(game=game).order_by('-added').all()[:10][::-1]
+        else:
+            actions = Action.objects.filter(game=game).filter(scene=scene).order_by('-added').all()[:10][::-1]
+    elif last_id is not None: # repopulate render
+        parms['parms']['include_container'] = False
+        if gm:
+            actions = Action.objects.filter(game=game).order_by('-added').filter(pk__gt=last_id).all()[::-1]
+        else:
+            actions = Action.objects.filter(game=game).filter(scene=scene).order_by('-added').filter(pk__gt=last_id).all()[::-1]
+    else:
+        parms['parms']['include_container'] = False
+        actions = Action.objects.filter(pk=get_id).all()
 
-def get_action(request)
+    for action in actions:
+        temp_dict = dict(action=action, rolls=list(), finished=True, form=None)
+        rolls = Roll.objects.filter(action=action).order_by('added').all()
+        for roll in rolls:
+            if gm:
+                visibility = dict(visible_dice=True,
+                                visible_parm_bonus=True,
+                                visible_free_bonus=True,
+                                visible_difficulty=True,
+                                visible_result=True,
+                                visibility=True
+                                  )
+            else:
+                visibility = RollVisibility.objects.filter(roll=roll).filter(player=player).first()
+            temp_dict['rolls'].append(dict(
+                roll=roll,
+                visibility=visibility
+            ))
+        parms['parms']['actions'].append(temp_dict)  #parms.actions.0.action\0.rolls.0.roll\0.rolls.0.visibility
+        if not action.finished:
+            temp_dict['finished'] = False
+            temp_dict['form'] = GMActionForm(instance=action)
+    if initial:
+        return parms
+    else:
+        return render(request, 'game/action_log.html', parms)
 
-@ajax_request
 def action_finish(request):
-    # get action ID from post + check authoritah
-    # in main html if not action.finished -> build a form from parms.
-    # submit here, get positive and hit reload
-    return True
+    return True  # submit form reload container with resulting html (HTML to render (!))
 
-def roll(request):
-    # get action ID from url parms + check authoritah
+
+def roll(request):  # works in modal, submits reload with link to self repopulating;
+                    # when reloading outputs html with rolls (add button is created by action)
+                    # initial - returns parms for action_log?
     return True

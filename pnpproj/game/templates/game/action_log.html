@@ -1,0 +1,16 @@
+{% if parms.include_container %}
+<div id="log_container">
+    <ul id="actions">
+{% endif %}
+        {% for action in parms.actions %}
+        <li>
+            <b>{{ action.action.char }}</b>
+            <i>{{ action.action.char.flavour }}</i>
+            <p>{{ action.action.action }}</p>
+            <p>{{ action.action.get_text }} </p>
+        </li>
+        {% endfor %}
+{% if parms.include_container %}
+    </ul>
+</div>
+{% endif %}

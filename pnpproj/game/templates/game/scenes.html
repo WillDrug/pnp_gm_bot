@@ -54,15 +54,7 @@
             {% endif %}
             <script>
                setInterval(function() {
-                    $.ajax({
-                      type: "GET",
-                      url: "{% url 'update_online' parms.scene.pk %}",
-                      success: function(data) {
-                           $('#online').html("")
-                           $.each(data.online, function(key, value) {
-								$('#online').append("<li><span>"+value.active+"</span>:"+value.name+"</li>");
-                           });
-                      }
+                      $('#scenes').parent().load("{% url 'scenes' -1 %}");
                     });
                 }, 60000);
             </script>

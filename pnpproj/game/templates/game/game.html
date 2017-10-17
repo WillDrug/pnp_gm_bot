@@ -27,20 +27,8 @@
 
 
 {% block mid %}
-<div id="action_log" class="action_log_container">
-    <div class="hidden" id="log_parms" last_id="0"></div>
-<div>
-    <p>Char name <i>time</i></p>
-    <small>ACtion</small>
-    <small>Phrase</small>
-    <button>Some buttons</button><textarea>Here's text</textarea>
-    <ul>
-        <li>Roll 1</li>
-        <li>Roll 2</li>
-    </ul>
-</div>
-
-</div>
+{% include 'game/action_log.html' with parms=action_parms.parms %}
+{% include 'game/action_submit.html' with parms=action_form_parms.parms %}
 {% endblock %}
 
 
