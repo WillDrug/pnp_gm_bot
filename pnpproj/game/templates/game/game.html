@@ -27,8 +27,12 @@
 
 
 {% block mid %}
-{% include 'game/action_log.html' with parms=action_parms.parms %}
-{% include 'game/action_submit.html' with parms=action_form_parms.parms %}
+<div id="log">
+    {% include 'game/action_log.html' with parms=action_parms.parms %}
+</div>
+<div id="form_container">
+    {% include 'game/action_submit.html' with parms=action_submit.parms %}
+</div>
 {% endblock %}
 
 

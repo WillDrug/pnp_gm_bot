@@ -3,7 +3,8 @@ import hashlib
 import time
 
 from django import forms
-from game.models import Game, Setting, Character, Languages, ParmGroup, Scene, CharParm, Item, InfSet, Status, Action, Roll, RollVisibility
+from game.models import Game, Setting, Character, Languages, ParmGroup, Scene, CharParm, Item, InfSet, Status, Action, \
+    Roll, RollVisibility
 
 
 class NewSettingForm(forms.ModelForm):
@@ -91,6 +92,7 @@ class StatusForm(forms.ModelForm):
     class Meta:
         model = Status
         fields = ('name', 'item', 'turns')
+
     name = forms.CharField(widget=forms.TextInput(), label='')
     item = forms.ModelChoiceField(queryset=InfSet.objects.none(), label='')
     turns = forms.IntegerField(required=False)
@@ -100,10 +102,12 @@ class StatusForm(forms.ModelForm):
         super(StatusForm, self).__init__(*ar, **kw)
         self.fields['item'].queryset = InfSet.objects.filter(character=char).all()
 
+
 class InfSetForm(forms.ModelForm):
     class Meta:
         model = InfSet
         fields = ('reference',)
+
     reference = forms.CharField(widget=forms.TextInput(), label='Название Сета')
 
     def is_valid(self, *ar, **kw):
@@ -127,10 +131,12 @@ class ParmGroupForm(forms.ModelForm):
         self.instance.setting = setting
         return super(ParmGroupForm, self).is_valid(*ar, **kw)
 
+
 class GroupInlineForm(forms.ModelForm):
     class Meta:
         model = CharParm
         fields = ('name', 'flavour', 'value', 'override_cost', 'affected_by')
+
     name = forms.CharField(widget=forms.TextInput, label='Название')
     flavour = forms.CharField(widget=forms.Textarea, label='Описание')
     value = forms.IntegerField(label='Значение')
@@ -142,6 +148,7 @@ class GroupInlineForm(forms.ModelForm):
         super(GroupInlineForm, self).__init__(*ar, **kw)
         self.fields['affected_by'].queryset = CharParm.objects.filter(character=character).all()
 
+
 class SceneForm(forms.ModelForm):
     class Meta:
         model = Scene
@@ -149,6 +156,7 @@ class SceneForm(forms.ModelForm):
 
     name = forms.CharField(widget=forms.TextInput(), label='Название')
     flavour = forms.CharField(widget=forms.Textarea(), label='Описание')
+
 
 class GMActionForm(forms.ModelForm):
     class Meta:
@@ -161,30 +169,73 @@ class GMActionForm(forms.ModelForm):
         self.instance.finished = True
         super(GMActionForm, self).save(*ar, **kw)
 
-class PlayerActionForm(forms.ModelForm):
+
+class PlayerActionSubmitForm(forms.ModelForm):
     class Meta:
         model = Action
-        fields = ('char', 'scene', 'action', 'phrase', 'language')
+        fields = ('action', 'phrase', 'language')
 
-    char = forms.HiddenInput()
-    scene = forms.HiddenInput()
-    action = forms.CharField(widget=forms.Textarea, label='Действие')
-    language = forms.ModelChoiceField(queryset=Languages.objects.none())
-    phrase = forms.CharField(widget=forms.Textarea, label='Речь')
+    action = forms.CharField(widget=forms.Textarea, label='Действие', required=False)
+    phrase = forms.CharField(widget=forms.Textarea, label='Речь', required=False)
+    language = forms.ModelChoiceField(queryset=Languages.objects.none(), label='Язык', required=False)
 
     # char+scene = on_save
     # on init - language query
     def __init__(self, *ar, **kw):
+        char = kw.pop('character')
+        super(PlayerActionSubmitForm, self).__init__(*ar, **kw)
+        self.fields['language'].queryset = char.languages
+
+    def is_valid(self, **kw):
+        error = False
+        valid = super(PlayerActionSubmitForm, self).is_valid()
+        if not valid:
+            error = True
+
+        if self.cleaned_data['phrase'] != '' and self.cleaned_data['language'] is None:
+            self._errors['Ошибка'] = ': Выберите язык'
+            error = True
+
+        char = kw.pop('char')
+        if char is None:
+            self._errors['Чо?'] = 'По ходу у вас нет персонажа'
+            error = True
+        if char.scene is None:
+            self._errors['Нет сцены'] = 'Ваш персонаж не находится в сцене. Подождите пока ГМ поместит вас в сцену'
+            error = True
+        if char.pause:
+            self._errors[
+                'Пауза'] = 'Вы не имеете права действовать. Дождитесь своего хода или пока ГМ снимет вас с паузы'
+            error = True
+
+        if error:
+            return False
+        else:
+            return True
 
 
+class GMCharActionSubmitForm(forms.ModelForm):
+    class Meta:
+        model = Action
+        fields = ('scene', 'action', 'response', 'finished')
 
-    added = models.DateTimeField(auto_now_add=True)
-    game = models.ForeignKey(Game)
-    char = models.ForeignKey(Character, null=True)
-    scene = models.ForeignKey(Scene, null=True, on_delete=models.SET_NULL)
-    scene_name = models.CharField(max_length=250)
-    action = models.CharField(max_length=5000)
-    phrase = models.CharField(max_length=5000)
-    language = models.ForeignKey(Languages)
-    response = models.CharField(max_length=5000)
-    finished = models.BooleanField(default=False)
+    scene = forms.ModelChoiceField(queryset=Scene.objects.none(), label='Сцена')
+    action = forms.CharField(widget=forms.Textarea, label='Действие')
+    response = forms.CharField(widget=forms.Textarea, label='Результат', required=False)
+    finished = forms.BooleanField(required=False)
+
+    def __init__(self, *ar, **kw):
+        game = kw.pop('game')
+        super(GMCharActionSubmitForm, self).__init__(*ar, **kw)
+        self.fields['scene'].queryset = Scene.objects.filter(game=game).all()
+
+    def is_valid(self, **kw):
+        error = False
+        valid = super(GMCharActionSubmitForm, self).is_valid()
+        if not valid:
+            error = True
+
+        if error:
+            return False
+        else:
+            return True

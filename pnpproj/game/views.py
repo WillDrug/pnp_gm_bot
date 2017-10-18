@@ -4,13 +4,15 @@ from django.contrib.auth.models import User
 from game.models import Character, CharParm, Influence, InfSet, Item, Status, ParmGroup, Players, Setting, Game, \
     Languages, Scene, Action, Roll, RollVisibility
 from game.forms import BaseCharForm, GMCharForm, ItemForm, StatusForm, InfSetForm, ParmGroupForm, GroupInlineForm, \
-    SceneForm, GMActionForm
+    SceneForm, GMActionForm, GMCharActionSubmitForm, PlayerActionSubmitForm
 from django.contrib.auth.decorators import login_required
 from django.urls import reverse
 from django.forms import inlineformset_factory, modelformset_factory
 from annoying.decorators import ajax_request
 from datetime import timezone, datetime, timedelta
 from barnum import gen_data
+
+
 # functions
 
 def authenticate_by_char(user, char):
@@ -24,14 +26,21 @@ def new_character(user):
     game = get_game(user)
     owner = user
     name = gen_data.create_name()
-    name = name[0]+' '+name[1]
+    name = name[0] + ' ' + name[1]
     newchar = Character(owner=owner, name=name, display_name=name,
                         game=game, experience=0)
     newchar.save()
     return newchar
 
+
 def get_game(user):
     return Game.objects.filter(invite=user.first_name).first()
+
+def get_char(user):
+    return Character.objects.filter(game=get_game(user)).filter(owner=user).first()
+
+def get_player(user):
+    return Players.objects.filter(user=user).filter(game=get_game(user)).first()
 
 @login_required(redirect_field_name='index')
 def game_main(request):
@@ -51,16 +60,28 @@ def player_view(request, game, **kw):
     if character is None:
         character = new_character(request.user)
     char_parms = char_edit(request, initial=True, character=character.pk)
-    scene_parms = scenes(request, initial=True, scene=character.scene.pk)
+    scene_parms = scenes(request, initial=True, scene=-1 if character.scene is None else character.scene.pk)
+    action_parms = action_log(request, gm=False)
+    action_submit_parms = action_submit(request, char=character.pk, initial=True)
     return render(request, 'game/game.html',
-                  dict(game=game, gm=False, char_parms=char_parms, scene_parms=scene_parms))
+                  dict(game=game, gm=False,
+                       char_parms=char_parms,
+                       scene_parms=scene_parms,
+                       action_parms=action_parms,
+                       action_submit=action_submit_parms))
 
 
 def gm_view(request, game, **kw):
     char_list_parms = char_list(request, initial=True)
     scene_parms = scenes(request, initial=True, scene='-1')
+    action_parms = action_log(request, gm=True)
+    action_submit_parms = action_submit(request, char='-1', initial=True)
     return render(request, 'game/game.html',
-                  dict(game=game, gm=True, char_list_parms=char_list_parms, scene_parms=scene_parms))
+                  dict(game=game, gm=True,
+                       char_list_parms=char_list_parms,
+                       scene_parms=scene_parms,
+                       action_parms=action_parms,
+                       action_submit=action_submit_parms))
 
 
 @login_required(redirect_field_name='index')
@@ -128,13 +149,15 @@ def char_edit(request, **kw):
         StatusFormSet = inlineformset_factory(Character, Status, form=StatusForm, extra=0)
         if request.method == 'POST':
             itemsformset = ItemFormSet(request.POST, instance=char, prefix='items', form_kwargs=dict(character=char))
-            statusformset = StatusFormSet(request.POST, instance=char, prefix='status', form_kwargs=dict(character=char))
+            statusformset = StatusFormSet(request.POST, instance=char, prefix='status',
+                                          form_kwargs=dict(character=char))
             if itemsformset.is_valid():
                 itemsformset.save()
             if statusformset.is_valid():
                 statusformset.save()
         parms['parms']['itemformset'] = ItemFormSet(instance=char, prefix='items', form_kwargs=dict(character=char))
-        parms['parms']['statusformset'] = StatusFormSet(instance=char, prefix='status', form_kwargs=dict(character=char))
+        parms['parms']['statusformset'] = StatusFormSet(instance=char, prefix='status',
+                                                        form_kwargs=dict(character=char))
         parms['parms']['infsets'] = InfSet.objects.filter(character=char).all()
     else:
         parms['parms']['items'] = Item.objects.filter(character=char).all()
@@ -147,6 +170,7 @@ def char_edit(request, **kw):
         return parms
     else:
         return render(request, 'game/char.html', parms)
+
 
 @ajax_request
 @login_required(redirect_field_name='index')
@@ -165,6 +189,7 @@ def base_char_edit(request, **kw):
     parms['title'] = 'Редактировать Персонажа'
     parms['deletable'] = False
     return render(request, 'tools/modal.html', parms)
+
 
 @ajax_request
 def inf_set_edit(request, **kw):
@@ -231,7 +256,8 @@ def group_edit(request, **kw):
     errors = list()
     if request.method == 'POST':
         grpform = ParmGroupForm(request.POST, instance=grp, prefix='grpform')
-        formset = GroupFormSet(request.POST, instance=grp, queryset=CharParm.objects.filter(character=character), form_kwargs=dict(character=character), prefix='grpset')
+        formset = GroupFormSet(request.POST, instance=grp, queryset=CharParm.objects.filter(character=character),
+                               form_kwargs=dict(character=character), prefix='grpset')
         if grpform.is_valid(setting=character.game.setting):
             grpform.save()
         else:
@@ -249,34 +275,18 @@ def group_edit(request, **kw):
         if errors.__len__() == 0:
             return redirect(reverse('char_edit', kwargs=dict(character=character.pk)))
     grpform = ParmGroupForm(instance=grp, prefix='grpform')
-    formset = GroupFormSet(instance=grp, queryset=CharParm.objects.filter(character=character), form_kwargs=dict(character=character), prefix='grpset')
+    formset = GroupFormSet(instance=grp, queryset=CharParm.objects.filter(character=character),
+                           form_kwargs=dict(character=character), prefix='grpset')
     return render(request, 'game/parmgroups.html', dict(grpform=grpform,
-                                                     formset=formset,
-                                                     character=character,
-                                                     errors=errors,
-                                                     action=reverse('group_edit',
-                                                                    kwargs=dict(character=character.pk, group=grp.pk))
-                                                     ))
+                                                        formset=formset,
+                                                        character=character,
+                                                        errors=errors,
+                                                        action=reverse('group_edit',
+                                                                       kwargs=dict(character=character.pk,
+                                                                                   group=grp.pk))
+                                                        ))
 
-@ajax_request
-def scenes_online(request, **kw):
-    game = get_game(request.user)
-    scene = Scene.objects.filter(pk=kw.pop('scene')).first()
-    requested_player = Players.objects.filter(game=game).filter(user=request.user).first()
-    if requested_player is not None:
-        requested_player.last_seen = datetime.utcnow()
-        requested_player.save()
-    characters = Character.objects.filter(game=game).filter(scene=scene).all()
-    ajax_object = dict(online=list())
-    for char in characters:
-        player = Players.objects.filter(game=game).filter(user=char.owner).first()
-        ajax_tmp = dict(
-            char=char.pk,
-            name=char.name,
-            active=calc_online(player.last_seen)
-        )
-        ajax_object['online'].append(ajax_tmp)
-    return ajax_object
+
 
 def scenes(request, **kw):
     try:
@@ -307,13 +317,14 @@ def scenes(request, **kw):
             player = Players.objects.filter(game=game).filter(user=char.owner).first()
             parms['parms']['chars'].append(dict(
                 char=char,
-                online=calc_online(player.last_seen)
+                online=True if datetime.now(timezone.utc) - player.last_seen > timedelta(minutes=5) else False
             ))
 
     if initial:
         return parms
     else:
         return render(request, 'game/scenes.html', parms)
+
 
 @ajax_request
 def scene_edit(request, **kw):
@@ -342,73 +353,105 @@ def scene_edit(request, **kw):
     return render(request, 'tools/modal.html', parms)
 
 
-def action_log(request, initial=False, **kw):
-    scene = Game.objects.filter(pk=kw.pop('scene')).first()
-    if scene is None:
-        return HttpResponse('BUUUUUUULLSHIIT')
-    player = Players.objects.filter(game=scene.game).filter(user=request.user).first()
-    gm = False
-    if game.setting.owner == request.user:
-        gm = True
-    if player is not None:
-        player.last_seen = datetime.utcnow()
-        player.save()
+def action_log(request, gm):
+    parms = dict(parms=dict())
+    if gm:
+        actions = Action.objects.filter(game=get_game(request.user)).order_by('-added')[:10][::-1]
+        char = None
     else:
-        return HttpResponse('BULLLLLLSHIT')
-    parms = dict(parms=dict(
-        actions=list(),
-        include_container=True,
-    ))
-    update = request.GET.get('update')
-    get_id = request.GET.get('get_id')
-    if update is None and get_id is None: # first populate
-        if gm:
-            actions = Action.objects.filter(game=game).order_by('-added').all()[:10][::-1]
-        else:
-            actions = Action.objects.filter(game=game).filter(scene=scene).order_by('-added').all()[:10][::-1]
-    elif update is not None: # repopulate render
-        parms['parms']['include_container'] = False
-        # new
-        last_date = player.last_seen
-        if gm:
-            actions = Action.objects.filter(game=game).order_by('-added').filter(added__gt=last_date).all()[::-1]
-        else:
-            actions = Action.objects.filter(game=game).filter(scene=scene).order_by('-added').filter(added__gt=last_date).all()[::-1]
-        # updated:
-        # get into another ajax request?
-    else:
-        parms['parms']['include_container'] = False
-        actions = Action.objects.filter(pk=get_id).all()
-
+        game = get_game(request.user)
+        char = get_char(request.user)
+        actions = Action.objects.filter(game=game).filter(scene=char.scene).order_by('-added')[:10][::-1]
+        parms['parms']['char'] = char
+    parms['parms']['gm'] = gm
+    parms['parms']['actions'] = list()
+    player = get_player(request.user)
+    player.last_seen = datetime.utcnow()
+    player.save()
     for action in actions:
-        temp_dict = dict(action=action, rolls=list(), finished=True, form=None)
+        if action.private and action.char != char:
+            continue
+        temp = dict()
+        temp['action'] = action
+        temp['action_phrase'] = action.get_text(char)
+        temp['char'] = action.char.__str__() if action.char is not None else 'Мир'
+        temp['char_flavour'] = action.char.flavour if action.char is not None else 'Действие не совершается конкретным персонажем'
+        temp['rolls'] = list()
         rolls = Roll.objects.filter(action=action).order_by('added').all()
         for roll in rolls:
-            if gm:
-                visibility = dict(visible_dice=True,
-                                visible_parm_bonus=True,
-                                visible_free_bonus=True,
-                                visible_difficulty=True,
-                                visible_result=True,
-                                visible_passed=True
-                                  )
-            else:
-                visibility = RollVisibility.objects.filter(roll=roll).filter(player=player).first()
-            temp_dict['rolls'].append({'roll': roll, 'visibility': visibility})
-        parms['parms']['actions'].append(temp_dict)  #parms.actions.0.action\0.rolls.0.roll\0.rolls.0.visibility
-        if not action.finished:
-            temp_dict['finished'] = False
-            temp_dict['form'] = GMActionForm(instance=action)
+            temp_roll = dict()
+            temp_roll['char'] = roll.char.__str__()
+            temp_roll['parm'] = roll.parm_name
+            temp_roll['parms'] = roll.show_roll(player)
+            temp['rolls'].append(temp_roll)
+        if gm and not action.finished:
+            parms['parms']['form'] = GMActionForm(instance=action)
+        parms['parms']['actions'].append(temp)
+    return parms
+
+def action_submit(request, initial=False, **kw):
+    char = kw.pop('char')
+    parms = dict(parms=dict())
+    game = get_game(request.user)
+    if char == '-1':
+        parms['parms']['action_url'] = reverse('action_submit', kwargs=dict(char='-1'))
+        if request.method == 'POST':
+            parms['parms']['form'] = GMCharActionSubmitForm(request.POST, game=game)
+            if parms['parms']['form'].is_valid():
+                private = request.POST.get('invisible')
+                action = parms['parms']['form'].save(commit=False)
+                action.scene_name = action.scene.name
+                action.game = game
+                if private is not None:
+                    action.private = True
+                action.save()
+        else:
+            parms['parms']['form'] = GMCharActionSubmitForm(game=game)
+    else:
+        char = Character.objects.filter(pk=char).first()
+        if not authenticate_by_char(request.user, char):
+            return HttpResponse('BUUUUUUULLSHIT')
+
+        parms['parms']['action_url'] = reverse('action_submit', kwargs=dict(char=char.pk))
+        if request.method == 'POST':
+            parms['parms']['form'] = PlayerActionSubmitForm(request.POST, character=char)
+            if char.scene is not None and not char.pause:
+                if parms['parms']['form'].is_valid(char=char):
+                    private = request.POST.get('invisible')
+                    action = parms['parms']['form'].save(commit=False)
+                    action.game = game
+                    action.char = char
+                    action.scene = char.scene
+                    action.scene_name = char.scene.name
+                    if private is not None:
+                        action.private = True
+                    action.save()
+                    parms['parms']['form'] = PlayerActionSubmitForm(character=char)
+        else:
+            parms['parms']['form'] = PlayerActionSubmitForm(character=char)
+
     if initial:
         return parms
     else:
-        return render(request, 'game/action_log.html', parms)
+        return render(request, 'game/action_submit.html', parms)
 
-def action_finish(request):
-    return True  # submit form reload container with resulting html (HTML to render (!))
+@ajax_request
+def get_actions(request):
+    player = get_player(request.user)
+    game = get_game(request.user)
+    if game.owner == request.user:
+        gm = True
+    else:
+        gm = False
+    resp = dict()
+    if gm:
+        new_actions = Action.objects.filter(added__gt=player.last_seen).order_by('-added').all()[::-1]
+        resp['new'] = [action.pk for action in new_actions]
+        updated = Action.objects.filter(updated__gt=player.last_seen).all()
+        resp['updated'] = [action.pk for action in updated]
+    else:
+        char = get_char(request.user)
+        new_actions = Action.objects.filter(scene=char.scene).filter()
 
-
-def roll(request):  # works in modal, submits reload with link to self repopulating;
-                    # when reloading outputs html with rolls (add button is created by action)
-                    # initial - returns parms for action_log?
-    return True
+    player.last_seen = datetime.utcnow()
+    player.save()

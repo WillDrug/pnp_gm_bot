@@ -236,52 +236,70 @@ class Action(models.Model):
     finished = models.BooleanField(default=False)
     private = models.BooleanField(default=False)
 
-
-    @property
-    def get_text(self):
-        if self.language in self.char.languages:
+    def get_text(self, char):
+        if self.phrase == '' or self.language is None:
+            return ''
+        if char is None:
+            return self.phrase
+        if self.language in self.char.languages.all():
             return self.phrase
         else:
             sentences = list()
             temp = ''
-            for a in self.phrase:
+            for a in self.phrase+' ':
                 if a in ['.', '!', '?']:
-                    temp+=a
-                else:
+                    temp += a
+                elif temp != '':
                     sentences.append(temp)
                     temp = ''
+
             new_phrase = ''
+            if sentences.__len__() == 0:
+                new_phrase = gen_data.create_sentence()
             for sentence in sentences:
                 to_append = gen_data.create_sentence()
                 to_append = to_append[:-1]
-                to_append += sentence
+                to_append += sentence + ' '
                 new_phrase += to_append
-                to_append = ''
             return new_phrase
 
 class Roll(models.Model):
-    type_pass = 'PASS'
-    type_surpass = 'SURPASS'
-    types = (
-        (type_pass, 'Сложность'),
-        (type_surpass, 'Больше на __')
-    )
+
     added = models.DateTimeField(auto_now_add=True)
     action = models.ForeignKey(Action)
+    char = models.ForeignKey(Character, on_delete=models.CASCADE, null=True)
     parm = models.ForeignKey(CharParm, on_delete=models.SET_NULL, null=True)
     parm_name = models.CharField(max_length=250)
-    type = models.CharField(max_length=15, choices=types, default=type_pass)
-    dice = models.IntegerField(default=0)
+    base_dice = models.IntegerField(default=100)
+    dice_roll = models.IntegerField(default=0)
     parm_bonus = models.IntegerField(default=0)
     free_bonus = models.IntegerField(default=0)
     difficulty = models.IntegerField(default=0)
-    passed = models.BooleanField()
+    # pass\surpass = diff - sum.
 
+    def show_roll(self, player):
+        roll = dict()
+        visibility = RollVisibility.objects.filter(roll=self).filter(player=player).first()
+        roll['base_dice'] = self.base_dice
+        roll['dice_roll'] = self.dice_roll if visibility.visible_dice_roll else '???'
+        roll['parm_bonus'] = self.parm_bonus if visibility.visible_parm_bonus else '???'
+        roll['free_bonus'] = self.free_bonus if visibility.visible_free_bonus else '???'
+        roll['difficulty'] = self.difficulty if visibility.visible_difficulty else '???'
+        roll['result'] = self.dice_roll+self.parm_bonus+self.free_bonus-self.difficulty if visibility.visible_result else '???'
+        if not visibility.visible_passed:
+            roll['passed'] = '???'
+        elif roll['result'] > 0:
+            roll['passed'] = 'true'
+        elif roll['result'] < 0:
+            roll['passed'] = 'false'
+        else:
+            roll['passed'] = 'tie'
+        return roll
 
 class RollVisibility(models.Model):
     roll = models.ForeignKey(Roll)
     player = models.ForeignKey(Players)
-    visible_dice = models.BooleanField()
+    visible_dice_roll = models.BooleanField()
     visible_parm_bonus = models.BooleanField()
     visible_free_bonus = models.BooleanField()
     visible_difficulty = models.BooleanField()

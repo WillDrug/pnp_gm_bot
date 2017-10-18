@@ -12,8 +12,8 @@ urlpatterns = [
     url(r'inf_set_edit/(?P<character>[0-9]*)/(?P<set>-?[0-9]*)/?$', views.inf_set_edit, name='inf_set_edit'),
     url(r'scenes/(?P<scene>-?[0-9]*)/?$', views.scenes, name='scenes'),
     url(r'scene_edit/(?P<scene>-?[0-9]*)/?$', views.scene_edit, name='scene_edit'),
-    url(r'update_online/(?P<scene>[0-9]*)/?$', views.scenes_online, name='update_online'),
-    url(r'action_log/(?P<scene>[0-9]*)/?$', views.action_log, name='action_log'),
+    url(r'action_submit/(?P<char>-?[0-9]*)/?$', views.action_submit, name='action_submit'),
+    url(r'get_actions', views.get_actions, name='get_actions')
 ]
 
 

@@ -1,0 +1,24 @@
+<div id="new_action">
+    <form id="action_submit_form" action="{{parms.action_url}}">
+        {% csrf_token %}
+    {{ parms.form }}
+    <input type="submit" name="visible" value="Отправить">
+        <input type="submit" name="invisible" value="Отправить скрытно">
+    </form>
+    {{ parms.form.errors }}
+    <script>
+        $('#action_submit_form').submit(function(e) {
+        var url = $("#action_submit_form").attr('action');
+        $.ajax({
+               type: "POST",
+               url: url,
+               data: $("#action_submit_form").serialize(), // serializes the form's elements.
+               success: function(data)
+               {
+                   $('#new_action').parent().html(data)
+               }
+             });
+        e.preventDefault(); // avoid to execute the actual submit of the form.
+    });
+    </script>
+</div>

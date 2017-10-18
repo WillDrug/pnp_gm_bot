@@ -34,7 +34,7 @@
                 <div class="tab-pane active">
                     <a id="scnedit{{parms.scene.pk}}"><p>{{ parms.scene.name }}</p></a>
                     <script>
-                        $('#scnedit{{parms.scene.pk}}").on("click", function(){
+                        $("#scnedit{{parms.scene.pk}}").on("click", function(){
                             $("#scenes").parent().load("{% url 'scene_edit' parms.scene.pk %}");
                         });
                     </script>
@@ -58,10 +58,10 @@
             {% endif %}
             {% endif %}
             <script>
-               setInterval(function() {
+               setTimeout(function() {
                       $('#scenes').parent().load("{% url 'scenes' -1 %}");
-                    });
-                }, 60000);
+                    }
+                , 60000);
             </script>
         </div>
     </div>
