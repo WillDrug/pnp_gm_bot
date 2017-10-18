@@ -10,6 +10,7 @@ from django.urls import reverse
 from django.forms import inlineformset_factory, modelformset_factory
 from annoying.decorators import ajax_request
 from datetime import timezone, datetime, timedelta
+from barnum import gen_data
 # functions
 
 def authenticate_by_char(user, char):
@@ -22,8 +23,10 @@ def authenticate_by_char(user, char):
 def new_character(user):
     game = get_game(user)
     owner = user
-    newchar = Character(owner=owner, game=game,
-                        experience=0)
+    name = gen_data.create_name()
+    name = name[0]+' '+name[1]
+    newchar = Character(owner=owner, name=name, display_name=name,
+                        game=game, experience=0)
     newchar.save()
     return newchar
 
@@ -254,8 +257,6 @@ def group_edit(request, **kw):
                                                      action=reverse('group_edit',
                                                                     kwargs=dict(character=character.pk, group=grp.pk))
                                                      ))
-def calc_online(seen):
-    return True if (datetime.now(timezone.utc) - seen) < timedelta(minutes=5) else False
 
 @ajax_request
 def scenes_online(request, **kw):
@@ -295,10 +296,6 @@ def scenes(request, **kw):
         parms['parms']['scenes'] = Scene.objects.filter(game=game).all()
     else:
         parms['parms']['gm'] = False
-    requested_player = Players.objects.filter(game=game).filter(user=request.user).first()
-    if requested_player is not None:
-        requested_player.last_seen = datetime.utcnow()
-        requested_player.save()
     if scene is not None:
         if scene.game.invite != request.user.first_name:
             return HttpResponse('BULLSHIT!!!')
@@ -350,10 +347,10 @@ def action_log(request, initial=False, **kw):
     if scene is None:
         return HttpResponse('BUUUUUUULLSHIIT')
     player = Players.objects.filter(game=scene.game).filter(user=request.user).first()
-    if game.setting.owner = request.user:
+    gm = False
+    if game.setting.owner == request.user:
         gm = True
-    elif player is not None:
-        gm = False
+    if player is not None:
         player.last_seen = datetime.utcnow()
         player.save()
     else:
@@ -362,19 +359,23 @@ def action_log(request, initial=False, **kw):
         actions=list(),
         include_container=True,
     ))
-    last_id = request.GET.get('last_id')
+    update = request.GET.get('update')
     get_id = request.GET.get('get_id')
-    if last_id is None and get_id is None: # first populate
+    if update is None and get_id is None: # first populate
         if gm:
             actions = Action.objects.filter(game=game).order_by('-added').all()[:10][::-1]
         else:
             actions = Action.objects.filter(game=game).filter(scene=scene).order_by('-added').all()[:10][::-1]
-    elif last_id is not None: # repopulate render
+    elif update is not None: # repopulate render
         parms['parms']['include_container'] = False
+        # new
+        last_date = player.last_seen
         if gm:
-            actions = Action.objects.filter(game=game).order_by('-added').filter(pk__gt=last_id).all()[::-1]
+            actions = Action.objects.filter(game=game).order_by('-added').filter(added__gt=last_date).all()[::-1]
         else:
-            actions = Action.objects.filter(game=game).filter(scene=scene).order_by('-added').filter(pk__gt=last_id).all()[::-1]
+            actions = Action.objects.filter(game=game).filter(scene=scene).order_by('-added').filter(added__gt=last_date).all()[::-1]
+        # updated:
+        # get into another ajax request?
     else:
         parms['parms']['include_container'] = False
         actions = Action.objects.filter(pk=get_id).all()
@@ -389,14 +390,11 @@ def action_log(request, initial=False, **kw):
                                 visible_free_bonus=True,
                                 visible_difficulty=True,
                                 visible_result=True,
-                                visibility=True
+                                visible_passed=True
                                   )
             else:
                 visibility = RollVisibility.objects.filter(roll=roll).filter(player=player).first()
-            temp_dict['rolls'].append(dict(
-                roll=roll,
-                visibility=visibility
-            ))
+            temp_dict['rolls'].append({'roll': roll, 'visibility': visibility})
         parms['parms']['actions'].append(temp_dict)  #parms.actions.0.action\0.rolls.0.roll\0.rolls.0.visibility
         if not action.finished:
             temp_dict['finished'] = False

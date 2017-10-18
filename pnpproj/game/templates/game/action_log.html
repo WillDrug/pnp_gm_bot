@@ -7,7 +7,13 @@
             <b>{{ action.action.char }}</b>
             <i>{{ action.action.char.flavour }}</i>
             <p>{{ action.action.action }}</p>
-            <p>{{ action.action.get_text }} </p>
+            <p>({{ action.action.language }}): {{ action.action.get_text }}</p>
+            Rolls:
+            <ul>
+                {% for roll in action.rolls %}
+                    <li></li>
+                {% endfor %}
+            </ul>
         </li>
         {% endfor %}
 {% if parms.include_container %}

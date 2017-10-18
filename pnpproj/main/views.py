@@ -15,6 +15,8 @@ def generate_menu(request):
     playing = Players.objects.filter(user=request.user).all()
     playing_full = dict()
     for i in playing:
+        if i.game.setting.owner == request.user:
+            continue
         if i.game.setting.name not in playing_full.keys():
             playing_full[i.game.setting.name] = list()
         playing_full[i.game.setting.name].append({'name': i.game.name,
@@ -92,11 +94,10 @@ def switch_game(request, **kwargs):
     except KeyError:
         return redirect(reverse('index'))
     game = Game.objects.filter(invite=gamehash).first()
-    if game.setting.owner != request.user:
-        player = Players.objects.filter(game=game).filter(user=request.user).first()
-        if player is None:
-            player = Players(user=request.user, game=game)
-            player.save()
+    player = Players.objects.filter(game=game).filter(user=request.user).first()
+    if player is None:
+        player = Players(user=request.user, game=game)
+        player.save()
     request.user.first_name = gamehash
     request.user.save()
     return redirect(reverse('game_index'))

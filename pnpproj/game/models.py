@@ -4,7 +4,8 @@ from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from django.dispatch import receiver
 from django.db.models.signals import post_save
-
+import re
+from barnum import gen_data
 
 # Create your models here.
 class Setting(models.Model):
@@ -223,6 +224,7 @@ class Influence(models.Model):
 
 class Action(models.Model):
     added = models.DateTimeField(auto_now_add=True)
+    updated = models.DateTimeField(auto_now=True)
     game = models.ForeignKey(Game)
     char = models.ForeignKey(Character, null=True)
     scene = models.ForeignKey(Scene, null=True, on_delete=models.SET_NULL)
@@ -232,10 +234,30 @@ class Action(models.Model):
     language = models.ForeignKey(Languages, null=True)
     response = models.CharField(max_length=5000, blank=True)
     finished = models.BooleanField(default=False)
+    private = models.BooleanField(default=False)
+
 
     @property
     def get_text(self):
-        return 'lol'
+        if self.language in self.char.languages:
+            return self.phrase
+        else:
+            sentences = list()
+            temp = ''
+            for a in self.phrase:
+                if a in ['.', '!', '?']:
+                    temp+=a
+                else:
+                    sentences.append(temp)
+                    temp = ''
+            new_phrase = ''
+            for sentence in sentences:
+                to_append = gen_data.create_sentence()
+                to_append = to_append[:-1]
+                to_append += sentence
+                new_phrase += to_append
+                to_append = ''
+            return new_phrase
 
 class Roll(models.Model):
     type_pass = 'PASS'
@@ -253,6 +275,7 @@ class Roll(models.Model):
     parm_bonus = models.IntegerField(default=0)
     free_bonus = models.IntegerField(default=0)
     difficulty = models.IntegerField(default=0)
+    passed = models.BooleanField()
 
 
 class RollVisibility(models.Model):
@@ -263,6 +286,7 @@ class RollVisibility(models.Model):
     visible_free_bonus = models.BooleanField()
     visible_difficulty = models.BooleanField()
     visible_result = models.BooleanField()
+    visible_passed = models.BooleanField()
 
 
 

@@ -11,7 +11,7 @@
                     {% if parms.scene.pk != scene.pk %}
                     <script>
                         $("#scn{{scene.pk}}").on("click", function(){
-                            $("#scenes").parent().load("{% url 'scenes' scene.pk %}")
+                            $("#scenes").parent().load("{% url 'scenes' scene.pk %}");
                         });
                     </script>
                     {% endif %}
@@ -32,7 +32,12 @@
         <div class="panel-body">
             <div class="tab-content">
                 <div class="tab-pane active">
-                    <p>{{ parms.scene.name }}</p>
+                    <a id="scnedit{{parms.scene.pk}}"><p>{{ parms.scene.name }}</p></a>
+                    <script>
+                        $('#scnedit{{parms.scene.pk}}").on("click", function(){
+                            $("#scenes").parent().load("{% url 'scene_edit' parms.scene.pk %}");
+                        });
+                    </script>
                     <i>{{ parms.scene.flavour }}</i>
                     <ul id="online">
                         {% for char in parms.chars %}
