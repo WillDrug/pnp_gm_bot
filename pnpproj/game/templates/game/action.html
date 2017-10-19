@@ -1,0 +1,54 @@
+<p id="scene">
+    {{action.scene_name}}
+</p>
+<p id="char">
+    {{char}}<br>
+    <small>{{flavour}}</small>
+</p>
+<p id="action">
+    {{action.action}}
+</p>
+<p id="phrase">
+    <small>({{action.language}})</small>
+        {{ phrase }}
+</p>
+<p id="response">{{action.response}}</p>
+<ul id="rolls">
+    {% for roll in rolls %}
+        {{ roll.char }} ({{ roll.parm }}):
+        [{{ roll.parms.base_dice }}] {{ roll.parms.dice_roll }} + {{ roll.parms.parm_bonus }} + {{ roll.parms.free_bonus }} <> {{ roll.parms.difficulty }} = {{ roll.parms.result }} ({{ roll.parms.passed }})
+    {% endfor %}
+    {% if form.present %}
+        <button id="newroll{{action.pk}}">ROLL</button>
+        <script>
+            $('#newroll{{action.pk}}').on("click", function(){
+                $("#modal_content").load("{% url 'add_roll' {{action.pk}} %}");
+                $("#modal_show").click()
+            });
+        </script>
+    {% endif %}
+</ul>
+{% if form.present %}
+<p>
+    <form id="gmform{{action.pk}}" method="POST" action="{{form.action}}?action={{action.pk}}">
+    {% csrf_token %}
+    {{ form.form }}
+    <input type="submit" value="Завершить">
+    </form>
+</p>
+<script>
+    $('#gmform{{action.pk}}').submit(function(e) {
+        e.preventDefault();
+        var url = $('#gmform{{action.pk}}').attr('action');
+        $.ajax({
+               type: "POST",
+               url: url,
+               data: $('#gmform{{action.pk}}').serialize(), // serializes the form's elements.
+               success: function(data)
+               {
+                   $('#gmform{{action.pk}}').parent().html(data)
+               }
+             });
+    });
+</script>
+{% endif %}

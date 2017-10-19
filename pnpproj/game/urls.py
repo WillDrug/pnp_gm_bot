@@ -13,7 +13,10 @@ urlpatterns = [
     url(r'scenes/(?P<scene>-?[0-9]*)/?$', views.scenes, name='scenes'),
     url(r'scene_edit/(?P<scene>-?[0-9]*)/?$', views.scene_edit, name='scene_edit'),
     url(r'action_submit/(?P<char>-?[0-9]*)/?$', views.action_submit, name='action_submit'),
-    url(r'get_actions', views.get_actions, name='get_actions')
+    url(r'get_actions/?$', views.get_actions, name='get_actions'),
+    url(r'get_action/?$', views.get_action, name='get_action'),
+    url(r'finish_action/(?P<action>[0-9]*)/?$', views.finish_action, name='finish_action'),
+    url(r'add_roll/(?P<action>[0-9]*)/?$', views.add_roll, name='add_roll'),
 ]
 
 

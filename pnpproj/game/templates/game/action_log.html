@@ -1,35 +1,8 @@
 <div id="actions_container">
     <ul id="actions">
         {% for action in parms.actions %}
-            <li id="{{action.action.pk}}">
-                <p id="scene">
-                    {{action.action.scene_name}}
-                </p>
-                <p id="char">
-                    {{action.char}}<br>
-                    <small>{{action.char_flavour}}</small>
-                </p>
-                <p id="action">
-                    {{action.action.action}}
-                </p>
-                <p id="phrase">
-                    <small>({{action.action.language}})</small>
-                        {{ action.action_phrase }}
-                </p>
-                <ul id="rolls">
-                    {% for roll in action.rolls %}
-                        {{ roll.char }} ({{ roll.parm }}):
-                        [{{ roll.parms.base_dice }}] {{ roll.parms.dice_roll }} + {{ roll.parms.parm_bonus }} + {{ roll.parms.free_bonus }} <> {{ roll.parms.difficulty }} = {{ roll.parms.result }} ({{ roll.parms.passed }})
-                    {% endfor %}
-                    {% if parms.gm and not action.finished %}
-                        <button id="newroll">ROLL</button>
-                    {% endif %}
-                </ul>
-                {% if parms.gm and not action.finished %}
-                <p id="gmform">
-                    {{ parms.form }}
-                </p>
-                {% endif %}
+            <li id="action{{action.action.pk}}">
+                {% include 'game/action.html' with action=action.action char=action.char phrase=action.action_phrase flavour=action.char_flavour rolls=action.rolls form=action.form %}
             </li>
         {% endfor %}
     </ul>
@@ -38,10 +11,16 @@
                        $.ajax({
                            type: "GET",
                            url: "{% url 'get_actions'  %}",
-                           data: $("#char_list").serialize(), // serializes the form's elements.
                            success: function(data)
                            {
-                               $('#char_list_container').parent().html(data)
+                               $.each(data.new, function(key,val) {
+                                    $.get("{% url 'get_action' %}?action="+val, function(data){
+                                        $('#actions').append('<li id="action'+val+'">'+data+'</li>');
+                                    });
+                               });
+                               $.each(data.updated, function(key,val) {
+                                    $('#action'+val).load("{% url 'get_action' %}?action="+val)
+                               });
                            }
                          });
                     }

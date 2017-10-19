@@ -165,10 +165,6 @@ class GMActionForm(forms.ModelForm):
 
     response = forms.CharField(widget=forms.Textarea())
 
-    def save(self, *ar, **kw):
-        self.instance.finished = True
-        super(GMActionForm, self).save(*ar, **kw)
-
 
 class PlayerActionSubmitForm(forms.ModelForm):
     class Meta:
@@ -204,8 +200,7 @@ class PlayerActionSubmitForm(forms.ModelForm):
             self._errors['Нет сцены'] = 'Ваш персонаж не находится в сцене. Подождите пока ГМ поместит вас в сцену'
             error = True
         if char.pause:
-            self._errors[
-                'Пауза'] = 'Вы не имеете права действовать. Дождитесь своего хода или пока ГМ снимет вас с паузы'
+            self._errors['Пауза'] = 'Вы не имеете права действовать. Дождитесь своего хода или пока ГМ снимет вас с паузы'
             error = True
 
         if error:

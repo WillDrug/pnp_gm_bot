@@ -9,7 +9,8 @@ from django.contrib.auth.decorators import login_required
 from django.urls import reverse
 from django.forms import inlineformset_factory, modelformset_factory
 from annoying.decorators import ajax_request
-from datetime import timezone, datetime, timedelta
+from datetime import datetime, timedelta
+from django.utils import timezone
 from barnum import gen_data
 
 
@@ -317,7 +318,7 @@ def scenes(request, **kw):
             player = Players.objects.filter(game=game).filter(user=char.owner).first()
             parms['parms']['chars'].append(dict(
                 char=char,
-                online=True if datetime.now(timezone.utc) - player.last_seen > timedelta(minutes=5) else False
+                online=True if timezone.now() - player.last_seen < timedelta(minutes=5) else False
             ))
 
     if initial:
@@ -355,18 +356,15 @@ def scene_edit(request, **kw):
 
 def action_log(request, gm):
     parms = dict(parms=dict())
+    actions = Action.objects.filter(game=get_game(request.user)).order_by('-added')[:10][::-1]
     if gm:
-        actions = Action.objects.filter(game=get_game(request.user)).order_by('-added')[:10][::-1]
         char = None
     else:
-        game = get_game(request.user)
         char = get_char(request.user)
-        actions = Action.objects.filter(game=game).filter(scene=char.scene).order_by('-added')[:10][::-1]
-        parms['parms']['char'] = char
     parms['parms']['gm'] = gm
     parms['parms']['actions'] = list()
     player = get_player(request.user)
-    player.last_seen = datetime.utcnow()
+    player.last_seen = timezone.now()
     player.save()
     for action in actions:
         if action.private and action.char != char:
@@ -385,7 +383,10 @@ def action_log(request, gm):
             temp_roll['parms'] = roll.show_roll(player)
             temp['rolls'].append(temp_roll)
         if gm and not action.finished:
-            parms['parms']['form'] = GMActionForm(instance=action)
+            temp['form'] = dict(present=True, form=GMActionForm(instance=action),
+                                action=reverse('finish_action', kwargs=dict(action=action.pk)))
+        else:
+            temp['form'] = dict(present=False)
         parms['parms']['actions'].append(temp)
     return parms
 
@@ -405,6 +406,7 @@ def action_submit(request, initial=False, **kw):
                 if private is not None:
                     action.private = True
                 action.save()
+                parms['parms']['form'] = GMCharActionSubmitForm(game=game)
         else:
             parms['parms']['form'] = GMCharActionSubmitForm(game=game)
     else:
@@ -439,7 +441,7 @@ def action_submit(request, initial=False, **kw):
 def get_actions(request):
     player = get_player(request.user)
     game = get_game(request.user)
-    if game.owner == request.user:
+    if game.setting.owner == request.user:
         gm = True
     else:
         gm = False
@@ -447,11 +449,71 @@ def get_actions(request):
     if gm:
         new_actions = Action.objects.filter(added__gt=player.last_seen).order_by('-added').all()[::-1]
         resp['new'] = [action.pk for action in new_actions]
-        updated = Action.objects.filter(updated__gt=player.last_seen).all()
+        updated = Action.objects.filter(updated__gt=player.last_seen, added__lte=player.last_seen).all()
         resp['updated'] = [action.pk for action in updated]
     else:
         char = get_char(request.user)
-        new_actions = Action.objects.filter(scene=char.scene).filter()
+        new_actions = Action.objects.filter(added__gt=player.last_seen).filter(private=False) | Action.objects.filter(added__gt=player.last_seen).filter(char=char)
+        new_actions = new_actions.all()
+        resp['new'] = [action.pk for action in new_actions]
+        updated = Action.objects.filter(updated__gt=player.last_seen, added__lte=player.last_seen).filter(private=False) | Action.objects.filter(updated__gt=player.last_seen, added__lte=player.last_seen)
+        updated = updated.all()
+        resp['updated'] = [action.pk for action in updated]
 
-    player.last_seen = datetime.utcnow()
+    player.last_seen = timezone.now()
     player.save()
+    return resp
+
+
+def get_action(request):
+    game = get_game(request.user)
+    if game.setting.owner == request.user:
+        gm = True
+    else:
+        gm = False
+    action = request.GET.get('action')
+    action = Action.objects.filter(pk=action).first()
+    if action is None:
+        return HttpResponse('')
+    if action.game != game:
+        return HttpResponse('BOGUS')
+
+    char = action.char.__str__() if action.char is not None else 'Мир'
+    char_flavour = action.char.flavour if action.char is not None else 'Действие не совершается конкретным персонажем'
+    rolls = list()
+    rolls_objects = Roll.objects.filter(action=action).order_by('added').all()
+    for roll in rolls_objects:
+        temp_roll = dict()
+        temp_roll['char'] = roll.char.__str__()
+        temp_roll['parm'] = roll.parm_name
+        temp_roll['parms'] = roll.show_roll(player)
+        rolls.append(temp_roll)
+    if gm and not action.finished:
+        form = dict(present=True, form=GMActionForm(instance=action),
+                    action=reverse('finish_action', kwargs=dict(action=action.pk)))
+    else:
+        form = dict(present=False)
+
+    return render(request, 'game/action.html', dict(
+        action=action,
+        char=char,
+        char_flavour=char_flavour,
+        phrase=action.get_text(char),
+        rolls=rolls,
+        form=form
+    ))
+
+def finish_action(request, **kw):
+    game = get_game(request.user)
+    if game.setting.owner != request.user:
+        return HttpResponse('WOW')
+    action = Action.objects.filter(pk=kw.pop('action')).first()
+    form = GMActionForm(request.POST, instance=action)
+    if form.is_valid:
+        action = form.save(commit=False)
+        action.finished = True
+        action.save()
+    return get_action(request)
+
+def add_roll(request, **kw):
+    action = kw.pop('action')

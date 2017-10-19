@@ -1,7 +1,7 @@
 <div id="new_action">
     <form id="action_submit_form" action="{{parms.action_url}}">
         {% csrf_token %}
-    {{ parms.form }}
+         {{ parms.form }}
     <input type="submit" name="visible" value="Отправить">
         <input type="submit" name="invisible" value="Отправить скрытно">
     </form>
