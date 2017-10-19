@@ -30,6 +30,9 @@ SOME_LINKS
 </form>
 
 <script>
+    $(document).ready(function(){
+        $('#form_container').load("{% url 'action_submit' -1 %}");
+    })
     $(".char_edit_link").on("click", function(e) {
         $('#char_list_container').parent().load($(this).attr("href"));
         return false;

@@ -135,10 +135,12 @@ class ParmGroupForm(forms.ModelForm):
 class GroupInlineForm(forms.ModelForm):
     class Meta:
         model = CharParm
-        fields = ('name', 'flavour', 'value', 'override_cost', 'affected_by')
+        fields = ('name', 'flavour', 'base_dice', 'value', 'override_cost', 'affected_by')
 
     name = forms.CharField(widget=forms.TextInput, label='Название')
     flavour = forms.CharField(widget=forms.Textarea, label='Описание')
+    base_dice = forms.IntegerField(label='Кубик')
+    multiple = forms.IntegerField(label='')
     value = forms.IntegerField(label='Значение')
     override_cost = forms.IntegerField(label='Стоимость (-1 = стоимость группы)')
     affected_by = forms.ModelMultipleChoiceField(queryset=CharParm.objects.none(), required=False)
@@ -234,3 +236,52 @@ class GMCharActionSubmitForm(forms.ModelForm):
             return False
         else:
             return True
+
+class VisibilityForm(forms.ModelForm):
+    class Meta:
+        model = RollVisibility
+        fields = ('visible_dice_roll', 'visible_parm_bonus', 'visible_free_bonus', 'visible_difficulty', 'visible_result', 'visible_passed')
+
+    visible_dice_roll = forms.BooleanField(required=False, initial=True)
+    visible_parm_bonus = forms.BooleanField(required=False, initial=True)
+    visible_free_bonus = forms.BooleanField(required=False, initial=True)
+    visible_difficulty = forms.BooleanField(required=False, initial=True)
+    visible_result = forms.BooleanField(required=False, initial=True)
+    visible_passed = forms.BooleanField(required=False, initial=True)
+
+    def __init__(self, *ar, **kw):
+        try:
+            player = kw.pop('player')
+        except KeyError:
+            player = None
+        super(VisibilityForm, self).__init__(*ar, **kw)
+        if player is not None:
+            self.instance.player = player
+
+class RollForm(forms.ModelForm):
+    class Meta:
+        model = Roll
+        fields = ('parm', 'parm_name', 'free_bonus', 'difficulty')
+
+    parm = forms.ModelChoiceField(queryset=CharParm.objects.none(), required=False)
+    parm_name = forms.CharField(widget=forms.TextInput(), required=False)
+    free_bonus = forms.IntegerField(initial=0)
+    difficulty = forms.IntegerField(initial=0)
+
+    def __init__(self, *ar, **kw):
+        try:
+            char = kw.pop('char')
+        except KeyError:
+            char = None
+        super(RollForm, self).__init__(*ar, **kw)
+        if char is not None:
+            self.fields['parm'].queryset = CharParm.objects.filter(character=char).all()
+            self.instance.character = char
+
+class CharChooseForm(forms.Form):
+    char = forms.ModelChoiceField(queryset=Character.objects.none())
+
+    def __init__(self, *ar, **kw):
+        action = kw.pop('action')
+        super(CharChooseForm, self).__init__(*ar, **kw)
+        self.fields['char'].queryset = Character.objects.filter(game=action.game).all()

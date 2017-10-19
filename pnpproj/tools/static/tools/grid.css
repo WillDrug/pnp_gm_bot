@@ -1,6 +1,9 @@
 /*body {
     background: white url("images/bg.jpg");
 }*/
+.hidden {
+    display: none;
+}
 
 /* game menu start */
 .menu .accordion-heading {  position: relative; }

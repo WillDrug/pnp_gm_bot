@@ -2,8 +2,9 @@
     <form id="action_submit_form" action="{{parms.action_url}}">
         {% csrf_token %}
          {{ parms.form }}
-    <input type="submit" name="visible" value="Отправить">
-        <input type="submit" name="invisible" value="Отправить скрытно">
+        <input id="hidden_visible" type="hidden" name="visible" value="true">
+        <input id="send" type="button" name="visible" value="Отправить">
+        <input id="send_hidden" type="button" name="invisible" value="Отправить скрытно">
     </form>
     {{ parms.form.errors }}
     <script>
@@ -20,5 +21,14 @@
              });
         e.preventDefault(); // avoid to execute the actual submit of the form.
     });
+
+        $('#send').on("click", function(){
+            $('#hidden_visible').val(true);
+            $('#action_submit_form').submit();
+        });
+        $('#send_hidden').on("click", function(){
+            $('#hidden_visible').val(false);
+            $('#action_submit_form').submit();
+        });
     </script>
 </div>

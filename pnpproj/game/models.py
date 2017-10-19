@@ -57,6 +57,9 @@ class Players(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     last_seen = models.DateTimeField(auto_now_add=True)
 
+    @property
+    def get_char(self): #would return just one char for GM but who gives a shit
+        return Character.objects.filter(game=self.game).filter(owner=self.user).first()
 
 class Character(models.Model):
     owner = models.ForeignKey(User, on_delete=models.PROTECT)
@@ -89,6 +92,7 @@ class ParmGroup(models.Model):
 class CharParm(models.Model):
     character = models.ForeignKey(Character, on_delete=models.CASCADE)
     group = models.ForeignKey(ParmGroup, on_delete=models.CASCADE)
+    base_dice = models.IntegerField(default=100)
     name = models.CharField(max_length=50)
     flavour = models.CharField(max_length=2000)
     value = models.IntegerField()
@@ -226,7 +230,7 @@ class Action(models.Model):
     added = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
     game = models.ForeignKey(Game)
-    char = models.ForeignKey(Character, null=True)
+    character = models.ForeignKey(Character, null=True)
     scene = models.ForeignKey(Scene, null=True, on_delete=models.SET_NULL)
     scene_name = models.CharField(max_length=250)
     action = models.CharField(max_length=5000)
@@ -241,7 +245,7 @@ class Action(models.Model):
             return ''
         if char is None:
             return self.phrase
-        if self.language in self.char.languages.all():
+        if self.language in self.character.languages.all():
             return self.phrase
         else:
             sentences = list()
@@ -267,7 +271,7 @@ class Roll(models.Model):
 
     added = models.DateTimeField(auto_now_add=True)
     action = models.ForeignKey(Action)
-    char = models.ForeignKey(Character, on_delete=models.CASCADE, null=True)
+    character = models.ForeignKey(Character, on_delete=models.CASCADE, null=True)
     parm = models.ForeignKey(CharParm, on_delete=models.SET_NULL, null=True)
     parm_name = models.CharField(max_length=250)
     base_dice = models.IntegerField(default=100)
@@ -277,9 +281,35 @@ class Roll(models.Model):
     difficulty = models.IntegerField(default=0)
     # pass\surpass = diff - sum.
 
+    def make_roll(self, action, char=None):
+        if self.parm_name == '':
+            self.parm_name = self.parm.name
+        if char is not None:
+            self.character = char
+        self.dice_roll = 100  #do random
+        self.parm_bonus = 0 if self.parm is None else self.parm.roll_bonus()
+        self.action = action
+
     def show_roll(self, player):
         roll = dict()
-        visibility = RollVisibility.objects.filter(roll=self).filter(player=player).first()
+        visibility = RollVisibility.objects.filter(roll=self.pk).filter(player=player).first()
+        if visibility is None:
+            full_visibility = dict(
+                base_dice=self.base_dice,
+                dice_roll=self.dice_roll,
+                parm_bonus=self.parm_bonus,
+                free_bonus=self.free_bonus,
+                difficulty=self.difficulty,
+                result=self.dice_roll+self.parm_bonus+self.free_bonus-self.difficulty,
+            )
+            if full_visibility['result'] > 0:
+                full_visibility['passed'] = 'true'
+            elif full_visibility['result'] < 0:
+                full_visibility['passed'] = 'false'
+            else:
+                full_visibility['passed'] = 'tie'
+            return full_visibility
+
         roll['base_dice'] = self.base_dice
         roll['dice_roll'] = self.dice_roll if visibility.visible_dice_roll else '???'
         roll['parm_bonus'] = self.parm_bonus if visibility.visible_parm_bonus else '???'
@@ -297,14 +327,14 @@ class Roll(models.Model):
         return roll
 
 class RollVisibility(models.Model):
-    roll = models.ForeignKey(Roll)
-    player = models.ForeignKey(Players)
-    visible_dice_roll = models.BooleanField()
-    visible_parm_bonus = models.BooleanField()
-    visible_free_bonus = models.BooleanField()
-    visible_difficulty = models.BooleanField()
-    visible_result = models.BooleanField()
-    visible_passed = models.BooleanField()
+    roll = models.ForeignKey(Roll, on_delete=models.CASCADE)
+    player = models.ForeignKey(Players, on_delete=models.CASCADE)
+    visible_dice_roll = models.BooleanField(default=True)
+    visible_parm_bonus = models.BooleanField(default=True)
+    visible_free_bonus = models.BooleanField(default=True)
+    visible_difficulty = models.BooleanField(default=True)
+    visible_result = models.BooleanField(default=True)
+    visible_passed = models.BooleanField(default=True)
 
 
 

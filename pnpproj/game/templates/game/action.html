@@ -15,14 +15,22 @@
 <p id="response">{{action.response}}</p>
 <ul id="rolls">
     {% for roll in rolls %}
-        {{ roll.char }} ({{ roll.parm }}):
+        <a id="edit{{roll.key}}">{{ roll.char }} ({{ roll.parm }})</a>:
         [{{ roll.parms.base_dice }}] {{ roll.parms.dice_roll }} + {{ roll.parms.parm_bonus }} + {{ roll.parms.free_bonus }} <> {{ roll.parms.difficulty }} = {{ roll.parms.result }} ({{ roll.parms.passed }})
+        {% if form.present %}
+        <script>
+            $('#edit{{roll.key}}').on("click", function(){
+                $('#modal_content').load("{% url 'edit_roll' roll.key %}");
+                $('#modal_show').click()
+            });
+        </script>
+        {% endif %}
     {% endfor %}
     {% if form.present %}
         <button id="newroll{{action.pk}}">ROLL</button>
         <script>
             $('#newroll{{action.pk}}').on("click", function(){
-                $("#modal_content").load("{% url 'add_roll' {{action.pk}} %}");
+                $("#modal_content").load("{% url 'add_roll' action.pk %}");
                 $("#modal_show").click()
             });
         </script>

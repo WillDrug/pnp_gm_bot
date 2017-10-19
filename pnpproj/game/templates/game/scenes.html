@@ -28,7 +28,9 @@
                 </li>
             </ul>
         </div>
+    </div>
     {% endif %}
+        {% if parms.scene %}
         <div class="panel-body">
             <div class="tab-content">
                 <div class="tab-pane active">
@@ -58,11 +60,18 @@
             {% endif %}
             {% endif %}
             <script>
-               setTimeout(function() {
-                      $('#scenes').parent().load("{% url 'scenes' -1 %}");
+            {% if parms.gm %}
+                setTimeout(function() {
+                      $('#scenes').parent().load("{% url 'scenes' parms.scene.pk %}");
                     }
                 , 60000);
+            {% else %}
+               setTimeout(function() {
+                      $('#scenes').parent().load("{% url 'scenes' '-1' %}");
+                    }
+                , 60000);
+            {% endif %}
             </script>
         </div>
-    </div>
+    {% endif %}
 </div>

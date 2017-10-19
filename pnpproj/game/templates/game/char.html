@@ -1,4 +1,4 @@
-<div id="char_container" url="{% url 'char_edit' parms.character.pk %}">
+<div id="char_container" char_id="{{parms.character.pk}}" url="{% url 'char_edit' parms.character.pk %}">
 {% load static %}
 {% load extra_tags %}
     {% if parms.character.levelup %}
@@ -344,6 +344,10 @@
     <button type="submit" name="charparmssubmit" value="Сохранить">Сохранить</button>
 </form>
 
-
+<script>
+$(document).ready(function(){
+    $('#form_container').load("{% url 'action_submit' parms.character.pk %}");
+})
+</script>
 
 </div>
