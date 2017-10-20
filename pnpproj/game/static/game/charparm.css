@@ -35,3 +35,25 @@
     padding:0px;
 }
 
+.small-int {
+    padding-left: 5px;
+    min-width: 100px;
+    max-height: 20px;
+    padding: 0px;
+}
+
+.scene-select {
+    min-width: 100px;
+    max-height: 20px;
+    padding: 0px;
+}
+
+.add_group_button {
+    padding: 5px;
+    margin-top: -5px;
+    margin-right: 5px;
+    border-style: groove;
+    border-width: 1px;
+    border-color: #469c46;
+    border-radius: 15px;
+    }

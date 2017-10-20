@@ -62,9 +62,9 @@ class GMCharForm(forms.ModelForm):
 
     levelup = forms.BooleanField(required=False)
     known = forms.BooleanField(required=False)
-    experience = forms.IntegerField(required=False)
+    experience = forms.IntegerField(widget=forms.NumberInput(attrs={'class': 'small-int form-control'}), required=False)
     pause = forms.BooleanField(required=False)
-    scene = forms.ModelChoiceField(queryset=Scene.objects.none(), required=False)
+    scene = forms.ModelChoiceField(widget=forms.Select(attrs={'class': 'form-control scene-select'}),queryset=Scene.objects.none(), required=False)
 
     def __init__(self, *ar, **kw):
         super(GMCharForm, self).__init__(*ar, **kw)

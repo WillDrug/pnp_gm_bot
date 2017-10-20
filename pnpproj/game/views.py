@@ -89,7 +89,7 @@ def char_list(request, **kw):
     except KeyError:
         initial = False
     game = Game.objects.filter(invite=request.user.first_name).first()
-    CharListFormSet = modelformset_factory(Character, form=GMCharForm, extra=0)
+    CharListFormSet = modelformset_factory(Character, form=GMCharForm, extra=0, can_delete=True)
     if request.method == 'POST':
         charlist = CharListFormSet(request.POST, queryset=Character.objects.filter(game=game))
         if charlist.is_valid():
@@ -651,3 +651,10 @@ def edit_action(request, **kw):
         form=form,
         action_url=action_url
     ))
+
+def new_npc(request, **kw):
+    game = get_game(request.user)
+    if game.setting.owner != request.user:
+        return HttpResponse('WOW')
+    new_char = new_character(request.user)
+    return redirect('game_index')

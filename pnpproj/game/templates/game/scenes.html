@@ -1,10 +1,11 @@
 <div id="scenes">
     {% load static %}
     <link rel="stylesheet" type="text/css" href="{% static 'game/scenes.css' %}" />
-    {% if parms.gm %}
+
     <div class="panel with-nav-tabs panel-default">
         <div class="panel-heading">
-            <ul class="nav nav-tabs">
+            {% if parms.gm %}
+            <ul class="nav nav-tabs" style="min-height: 20px;">
                 {% for scene in parms.scenes %}
                 <li class="nav-item{% if parms.scene.pk == scene.pk %} active{% endif %}">
                     <a id="scn{{scene.pk}}" class="nav-link">{{scene.name}}</a>
@@ -27,14 +28,15 @@
                     </script>
                 </li>
             </ul>
+            {% else %}
+            <h4>{% if parms.scene %}{{ parms.scene.name }}{% endif %}</h4>
+            {% endif %}
         </div>
     </div>
-    {% endif %}
         {% if parms.scene %}
         <div class="panel-body">
             <div class="tab-content">
                 <div class="tab-pane active">
-                    <a id="scnedit{{parms.scene.pk}}"><p>{{ parms.scene.name }}</p></a>
                     <script>
                         $("#scnedit{{parms.scene.pk}}").on("click", function(){
                             $("#scenes").parent().load("{% url 'scene_edit' parms.scene.pk %}");

@@ -3,12 +3,7 @@
 {% block navleft %}
  <li class="nav-item"><a class="nav-link" href="{% url 'game_index' %}?menu">Выбор Игры</a></li>
 <div class="center hidden"><button id="modal_show" data-toggle="modal" data-target="#squarespaceModal" class="btn btn-primary center-block">Click Me</button></div>
-<div class="modal fade" id="squarespaceModal" tabindex="-1" role="dialog" aria-labelledby="modalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content" id="modal_content">
-        </div>
-    </div>
-</div>
+
 <script>
         reload = function(id, url) {
             $('#'+id).parent().load(url)
@@ -38,5 +33,4 @@
 
 {% block right %}
 {% include 'game/scenes.html' with parms=scene_parms.parms %}
-Include chat
 {% endblock %}

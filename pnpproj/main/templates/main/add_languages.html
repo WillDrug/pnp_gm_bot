@@ -4,40 +4,112 @@
 <script src="{% static 'tools/superformset.js' %}"></script>
 <link rel="stylesheet" type="text/css" href="{% static 'game/model_edit.css' %}" />
 <form method="POST" id="setform">
+    <div class="row panel">
+        <div class="pull-left"><h4>Редактирование Сеттинга</h4></div>
+        <div class="pull-right"><button type="submit" class="save btn btn-success btaddn-default">Сохранить изменения</button></div>
+    </div>
+<div class="row panel panel-default">
+    <div class="col-md-9" style="margin-top: 5px; margin-bottom: 15px">
+        <h3>Группы Параметров</h3>
+        <small>Группа единообразных навыков персонажа. Имеет название, стоимоть повышения навыка (можно перезатереть для конкретного игрока, -1 -- нельзя повышать) и стоимость добавления нового навыка (-1 -- игрок не может добавлять новый)</small>
+    </div>
+    <div class="col-md-3" style="margin-top: 5px; margin-bottom: 15px">
+            <h3>Языки</h3>
+            <small>Языки сеттинга. Игрок, персонаж которого не знает язык на котором говорится фраза - увидит случайную латынь.</small>
+    </div>
+</div>
+<div class="row panel panel-default">
+<style>
+    .pg_area {
+        width: 100%;
+    }
+
+    .pg_text {
+        width: 100%;
+    }
+</style>
     {% csrf_token %}
-    <div class="formset">
-    {{ formset.management_form }}
-        <div class="hidden" id="langs_blank">{{formset.empty_form}}</div>
-    <div id="items-form-container">
-    {% for item_form in formset %}
-        <div id="item-{{ forloop.counter0 }}">
-            {{ item_form.id }}
-            {{ item_form }}
-        </div>
-    {% endfor %}
-    </div>
-        <input type="button" id="pluslang" value="Добавить">
-        <script>
-            $('#pluslang').djangoInlineFormAdd({
-                prefix: "{{ formset.prefix }}",
-                containerId: "#items-form-container",
-                templateId: "#langs_blank",
-            });
-        </script>
-    </div>
-    <input type="hidden" name="add_lang" value="true"/>
-    <div class="formset">
+
+    <div class="formset col-md-9" style="margin-top: 15px; margin-bottom: 15px">
         {{ groupformset.management_form }}
-        <div class="hidden" id="groups_blank">{{groupformset.empty_form}}</div>
-        <div id="groups-form-container">
+        <div class="hidden" id="groups_blank"><div class="panel panel-default">{{ groupformset.empty_form.id }}
+            <div class="panel-heading">
+                    <h4 class="panel-title">
+                        <a data-toggle="collapse" data-parent="#groups-form-container" href="#collapse{{form.instance.pk}}"><span class="glyphicon glyphicon-file">
+                        </span>Новая Группа</a>
+                    </h4>
+            </div>
+            <div class="row">
+                <div class="col-md-8" style="margin-left: 30px">
+                    <div class="form-group">
+                        <label>
+                            Название</label><br>
+                       {{ groupformset.empty_form.name }}
+                    </div>
+                    <div class="form-group">
+                        <label>
+                            Описание</label><br>
+                       {{ groupformset.empty_form.flavour }}
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label>
+                            Стоимость добавления</label><br>
+                        {{ groupformset.empty_form.cost_to_add }}
+                    </div>
+                    <div class="form-group">
+                        <label>
+                            Стоимость</label><br>
+                        {{ groupformset.empty_form.cost }}
+                    </div>
+                </div>
+                <div class="col-md-1"></div>
+            </div></div></div>
+        <div id="groups-form-container" class="panel-group">
         {% for form in groupformset %}
-        <div id="group-{{forloop.counter0}}">
-            {{ form.id }}
-            <p>{{ form.DELETE }}</p>
-            <p>{{ form.name }}</p>
-            <p>{{ form.flavour }}</p>
-            <p>Стоимость докупки: {{ form.cost_to_add }}</p>
-            <p>Стомиость поднятия навыка в группе: {{ form.cost }}</p>
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                    <h4 class="panel-title">
+                        <a data-toggle="collapse" data-parent="#groups-form-container" href="#collapse{{form.instance.pk}}"><span class="glyphicon glyphicon-file">
+                        </span>{{form.instance.name}}</a>
+                    </h4>
+            </div>
+            <div id="collapse{{form.instance.pk}}" class="panel-collapse collapse">
+                <div id="group-{{forloop.counter0}}" class="row">
+                    {{ form.id }}
+                    <div class="row">
+                        <div class="col-md-8" style="margin-left: 30px">
+                            <div class="form-group">
+                                <label>Название</label><br>
+                               {{ form.name }}
+                            </div>
+                            <div class="form-group">
+                                <label>Описание</label><br>
+                               {{ form.flavour }}
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label>
+                                Стоимость добавления</label><br>
+                                {{ form.cost_to_add }}
+                            </div>
+                            <div class="form-group">
+                                <label>
+                                Стоимость</label><br>
+                                {{ form.cost }}
+                            </div>
+                            <div class="form-group">
+                                <label class="btn btn-danger delete-check">
+				                    <z style="margin-right: 10px">Удалить</z> {{ form.DELETE }}
+		    	                </label>
+                            </div>
+                        </div>
+                        <div class="col-md-1"></div>
+                    </div>
+                </div>
+            </div>
         </div>
         {% endfor %}
         </div>
@@ -50,6 +122,58 @@
             });
         </script>
     </div>
-    <button type="submit" class="save btn btaddn-default">Save</button>
-    </form>
+        <div class="formset col-md-3" style="margin-top: 15px; margin-bottom: 15px">
+        {{ formset.management_form }}
+        <div class="hidden" id="langs_blank">
+            <li class="langs">
+                {{formset.empty_form.id}}
+                {{formset.empty_form.name}}
+                <label class="btn btn-danger delete-check">
+                {{formset.empty_form.DELETE}}
+		    	</label>
+            </li>
+        </div>
+        <ul class="tab-pills nav" id="items-form-container">
+        {% for item_form in formset %}
+            <li class="langs" id="item-{{ forloop.counter0 }}">
+                {{ item_form.id }}
+                {{ item_form.name }}
+                <label class="btn btn-danger delete-check">
+				    {{ item_form.DELETE }}
+		    	</label>
+            </li>
+        {% endfor %}
+        </ul>
+        <input class="btn btn-success" id="pluslang" value="Добавить">
+        <script>
+            $('.langs input[type=text]').each(function(){
+                $(this).attr("placeholder", "Название языка");
+            });
+            $('#pluslang').djangoInlineFormAdd({
+                prefix: "{{ formset.prefix }}",
+                containerId: "#items-form-container",
+                templateId: "#langs_blank",
+            });
+        </script>
+
+    </div>
+
+    <input type="hidden" name="add_lang" value="true"/>
+
+
+</div>
+</form>
+<script>
+    $(function() {
+    $('.delete-check').tooltip({
+        placement: 'right',
+        title: 'Удалить'
+        });
+    });
+</script>
+<style>
+.delete-check input {
+    autocomplete: off;
+}
+</style>
 {% endblock %}

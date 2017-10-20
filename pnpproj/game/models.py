@@ -383,127 +383,132 @@ def populate_parms(sender, instance, created, *args, **kwargs):
         instance.save()
         # stats
         grp = ParmGroup.objects.filter(setting=instance.game.setting).filter(name='Статы').first()
-        strength = CharParm(character=instance, group=grp, name='Сила', value=1,
-                            flavour='Физическая сила персонажа -- я могу поднять помидор.')
-        strength.save()
-        constitution = CharParm(character=instance, group=grp, name='Выносливость', value=1,
-                                flavour='Выносливость персонажа -- я могу съесть тухлый помидор')
-        constitution.save()
-        dexterity = CharParm(character=instance, group=grp, name='Ловкость', value=1,
-                             flavour='Ловкость персонажа -- я могу кинуть помидор')
-        dexterity.save()
-        agility = CharParm(character=instance, group=grp, name='Скорость', value=1,
-                           flavour='Скорость персонажа -- я могу догнать помидор')
-        agility.save()
-        intelligence = CharParm(character=instance, group=grp, name='Интеллект', value=1,
-                                flavour='Интеллект персонажа -- я знаю что помидор фрукт')
-        intelligence.save()
-        perception = CharParm(character=instance, group=grp, name='Внимание', value=1,
-                              flavour='Внимание персонажа -- я могу следить за тремя помидорами')
-        perception.save()
-        power = CharParm(character=instance, group=grp, name='Харизма', value=1,
-                         flavour='Сила Духа персонажа -- я могу заколдовать или продать '
-                                 'фруктовый салат с помидором')
-        power.save()
-        willpower = CharParm(character=instance, group=grp, name='Воля', value=1,
-                             flavour='Сила Воли персонажа -- я могу устоять от того чтобы делать '
+        if grp is not None:
+            strength = CharParm(character=instance, group=grp, name='Сила', value=1,
+                                flavour='Физическая сила персонажа -- я могу поднять помидор.')
+            strength.save()
+            constitution = CharParm(character=instance, group=grp, name='Выносливость', value=1,
+                                    flavour='Выносливость персонажа -- я могу съесть тухлый помидор')
+            constitution.save()
+            dexterity = CharParm(character=instance, group=grp, name='Ловкость', value=1,
+                                 flavour='Ловкость персонажа -- я могу кинуть помидор')
+            dexterity.save()
+            agility = CharParm(character=instance, group=grp, name='Скорость', value=1,
+                               flavour='Скорость персонажа -- я могу догнать помидор')
+            agility.save()
+            intelligence = CharParm(character=instance, group=grp, name='Интеллект', value=1,
+                                    flavour='Интеллект персонажа -- я знаю что помидор фрукт')
+            intelligence.save()
+            perception = CharParm(character=instance, group=grp, name='Внимание', value=1,
+                                  flavour='Внимание персонажа -- я могу следить за тремя помидорами')
+            perception.save()
+            power = CharParm(character=instance, group=grp, name='Харизма', value=1,
+                             flavour='Сила Духа персонажа -- я могу заколдовать или продать '
                                      'фруктовый салат с помидором')
-        willpower.save()
+            power.save()
+            willpower = CharParm(character=instance, group=grp, name='Воля', value=1,
+                                 flavour='Сила Воли персонажа -- я могу устоять от того чтобы делать '
+                                         'фруктовый салат с помидором')
+            willpower.save()
 
         # core
         grp = ParmGroup.objects.filter(setting=instance.game.setting).filter(name='Основное').first()
-        initiative = CharParm(character=instance, group=grp, name='Инициатива', value=0,
-                              flavour='Определяет кто ходит первым')
-        initiative.save()
-        initiative.affected_by.add(dexterity)
-        initiative.affected_by.add(agility)
-        initiative.save()
-        health = CharParm(character=instance, group=grp, name='Здоровье', value=1,
-                          flavour='Здоровье персонажа. Персонаж не имеет проблем пока успешно прокидывает '
-                                  'сложность здоровья. Прокачивать здоровье проще, чем выносливость')
-        health.save()
-        health.affected_by.add(constitution)
-        health.save()
+        if grp is not None:
+            initiative = CharParm(character=instance, group=grp, name='Инициатива', value=0,
+                                  flavour='Определяет кто ходит первым')
+            initiative.save()
+            initiative.affected_by.add(dexterity)
+            initiative.affected_by.add(agility)
+            initiative.save()
+            health = CharParm(character=instance, group=grp, name='Здоровье', value=1,
+                              flavour='Здоровье персонажа. Персонаж не имеет проблем пока успешно прокидывает '
+                                      'сложность здоровья. Прокачивать здоровье проще, чем выносливость')
+            health.save()
+            health.affected_by.add(constitution)
+            health.save()
 
         # combat
         grp = ParmGroup.objects.filter(setting=instance.game.setting).filter(name='Бой').first()
-        attack = CharParm(character=instance, group=grp, name='Атака', value=0,
-                          flavour='Умение обращаться с оружием и наносить им урон (или обращаться с кулаками)')
-        attack.save()
-        attack.affected_by.add(dexterity)
-        attack.save()
-        block = CharParm(character=instance, group=grp, name='Блок', value=0,
-                         flavour='Умение останавливать удары (не делает кожу лезвие-непробиваемым)')
-        block.save()
-        block.affected_by.add(dexterity)
-        block.save()
-        dodge = CharParm(character=instance, group=grp, name='Уклонение', value=0,
-                         flavour='Умение уклоняться от ударов')
-        dodge.save()
-        dodge.affected_by.add(dexterity)
-        dodge.save()
+        if grp is not None:
+            attack = CharParm(character=instance, group=grp, name='Атака', value=0,
+                              flavour='Умение обращаться с оружием и наносить им урон (или обращаться с кулаками)')
+            attack.save()
+            attack.affected_by.add(dexterity)
+            attack.save()
+            block = CharParm(character=instance, group=grp, name='Блок', value=0,
+                             flavour='Умение останавливать удары (не делает кожу лезвие-непробиваемым)')
+            block.save()
+            block.affected_by.add(dexterity)
+            block.save()
+            dodge = CharParm(character=instance, group=grp, name='Уклонение', value=0,
+                             flavour='Умение уклоняться от ударов')
+            dodge.save()
+            dodge.affected_by.add(dexterity)
+            dodge.save()
 
         # magic
         grp = ParmGroup.objects.filter(setting=instance.game.setting).filter(name='Магия').first()
-        magic_level = CharParm(character=instance, group=grp, name='Уровень Магии', value=-1,
-                               flavour='Определяет максимальную сложность заклинаний вашего персонажа')
-        magic_level.save()
-        magic_level.affected_by.add(intelligence)
-        magic_level.save()
-        projection = CharParm(character=instance, group=grp, name='Проекция', value=0,
-                              flavour='Определяет насколько хорошо вы целитесь или защищаетесь заклинаниями')
-        projection.save()
-        projection.affected_by.add(power)
-        projection.save()
-        mana = CharParm(character=instance, group=grp, name='Мана', value=0,
-                        flavour='Духовная усталость. Работает как здоровье.')
-        mana.save()
-        mana.affected_by.add(power)
-        mana.save()
+        if grp is not None:
+            magic_level = CharParm(character=instance, group=grp, name='Уровень Магии', value=-1,
+                                   flavour='Определяет максимальную сложность заклинаний вашего персонажа')
+            magic_level.save()
+            magic_level.affected_by.add(intelligence)
+            magic_level.save()
+            projection = CharParm(character=instance, group=grp, name='Проекция', value=0,
+                                  flavour='Определяет насколько хорошо вы целитесь или защищаетесь заклинаниями')
+            projection.save()
+            projection.affected_by.add(power)
+            projection.save()
+            mana = CharParm(character=instance, group=grp, name='Мана', value=0,
+                            flavour='Духовная усталость. Работает как здоровье.')
+            mana.save()
+            mana.affected_by.add(power)
+            mana.save()
 
         # secondary
         grp = ParmGroup.objects.filter(setting=instance.game.setting).filter(name='Вторичное').first()
-        acrobatics = CharParm(character=instance, group=grp, name='Акробатика', value=0,
-                              flavour='Умение персонажа прыгать, гнуться и оказываться за спиной оппонента')
-        acrobatics.save()
-        acrobatics.affected_by.add(dexterity)
-        acrobatics.save()
-        athletics = CharParm(character=instance, group=grp, name='Атлетика', value=0,
-                             flavour='Умение персонажа поднимать тяжести и управляться с доспехами')
-        athletics.save()
-        athletics.affected_by.add(strength)
-        athletics.save()
-        occult = CharParm(character=instance, group=grp, name='Оккульт', value=0,
-                          flavour='Умение персонажа чувствовать колдунство перед собой и проводить ритуалы'
-                                  '(По умолчанию магия не видна)')
-        occult.save()
-        occult.affected_by.add(perception)
-        occult.affected_by.add(magic_level)
-        occult.save()
-        notice = CharParm(character=instance, group=grp, name='Наблюдательность', value=0,
-                          flavour='Умение персонажа успешно найти вещь или выделить в толпе кого-то')
-        notice.save()
-        notice.affected_by.add(perception)
-        social = CharParm(character=instance, group=grp, name='Социальное', value=0,
-                          flavour='Умение персонажа звучать убедительно')
-        social.save()
-        social.affected_by.add(power)
-        social.save()
-        style = CharParm(character=instance, group=grp, name='Стиль', value=0,
-                         flavour='Умение персонажа круто выглядеть в любой ситуации. '
-                                 'Это не третичный навык потому что быть крутым чего-то да стоит.')
-        style.save()
-        style.affected_by.add(power)
-        style.save()
-        empathy = CharParm(character=instance, group=grp, name='Эмпатия', value=0,
-                           flavour='Умение "читать" других людей. Бросок идет против Стойкости.')
-        empathy.save()
-        empathy.affected_by.add(perception)
-        empathy.save()
-        composure = CharParm(character=instance, group=grp, name='Стойкость', value=0,
-                             flavour='Умение персонажа не терять лицо и переносить боль. '
-                                     'Влияет на контроль эмоций и перенос урона.')
-        composure.save()
-        composure.affected_by.add(willpower)
-        composure.save()
+        if grp is not None:
+            acrobatics = CharParm(character=instance, group=grp, name='Акробатика', value=0,
+                                  flavour='Умение персонажа прыгать, гнуться и оказываться за спиной оппонента')
+            acrobatics.save()
+            acrobatics.affected_by.add(dexterity)
+            acrobatics.save()
+            athletics = CharParm(character=instance, group=grp, name='Атлетика', value=0,
+                                 flavour='Умение персонажа поднимать тяжести и управляться с доспехами')
+            athletics.save()
+            athletics.affected_by.add(strength)
+            athletics.save()
+            occult = CharParm(character=instance, group=grp, name='Оккульт', value=0,
+                              flavour='Умение персонажа чувствовать колдунство перед собой и проводить ритуалы'
+                                      '(По умолчанию магия не видна)')
+            occult.save()
+            occult.affected_by.add(perception)
+            occult.affected_by.add(magic_level)
+            occult.save()
+            notice = CharParm(character=instance, group=grp, name='Наблюдательность', value=0,
+                              flavour='Умение персонажа успешно найти вещь или выделить в толпе кого-то')
+            notice.save()
+            notice.affected_by.add(perception)
+            social = CharParm(character=instance, group=grp, name='Социальное', value=0,
+                              flavour='Умение персонажа звучать убедительно')
+            social.save()
+            social.affected_by.add(power)
+            social.save()
+            style = CharParm(character=instance, group=grp, name='Стиль', value=0,
+                             flavour='Умение персонажа круто выглядеть в любой ситуации. '
+                                     'Это не третичный навык потому что быть крутым чего-то да стоит.')
+            style.save()
+            style.affected_by.add(power)
+            style.save()
+            empathy = CharParm(character=instance, group=grp, name='Эмпатия', value=0,
+                               flavour='Умение "читать" других людей. Бросок идет против Стойкости.')
+            empathy.save()
+            empathy.affected_by.add(perception)
+            empathy.save()
+            composure = CharParm(character=instance, group=grp, name='Стойкость', value=0,
+                                 flavour='Умение персонажа не терять лицо и переносить боль. '
+                                         'Влияет на контроль эмоций и перенос урона.')
+            composure.save()
+            composure.affected_by.add(willpower)
+            composure.save()
 

@@ -23,50 +23,53 @@
     </script>
     {% endif %}
 {% for group in parms.groups %}
-    <div class="group" id="grp{{ group.charparm_formset.prefix }}">
+    <div class="group panel panel-default" id="grp{{ group.charparm_formset.prefix }}">
         {% csrf_token %}
         {{ group.charparm_formset.management_form }}
-        <div class="cp_tooltip">
-            <a id="group{{group.group.pk}}">{{ group.group.name }}</a>{% if parms.gm %}
-            <script>
-                $('#group{{group.group.pk}}').on("click", function(){
-                    $('#char_container').parent().load("{% url 'group_edit' parms.character.pk group.group.pk %}")
-                });
-            </script>{% endif %}
+            <div class="panel-heading">
+                <div class="panel-title">
+                    <a id="group{{group.group.pk}}">{{ group.group.name }}</a>
+                    <div class="pull-right cp_tooltip"><span class="glyphicon glyphicon-question-sign"></span><div class="cp_tooltiptext">{{ group.group.flavour }}</div></div>
+                   {% if parms.gm %}
+                    <script>
+                         $('#group{{group.group.pk}}').on("click", function(){
+                             $('#char_container').parent().load("{% url 'group_edit' parms.character.pk group.group.pk %}")
+                         });
+                    </script>{% endif %}
 
-                {% if group.group.cost_to_add > -1 and can_do %}
-                <button id="add-{{ group.group.pk }}" cost="{{group.group.cost_to_add}}" class="btn btn-success btn-number btnadd" type="button">+</button>
-                <!--<button id="delete-{{ group.group.pk }}" type="button">Delete</button>-->
-                <script type="text/html" id="charparm-{{ group.group.pk }}-template">
-                    <fieldset class="charparm-{{ group.group.pk }}-__prefix__" style="display: none;">
-                        {{ group.charparm_formset.empty_form.as_p }}
-                    </fieldset>
-                </script>
-                <script>
-                    $('#add-{{ group.group.pk }}').djangoInlineFormAdd({
-                        prefix: "{{ group.charparm_formset.prefix }}",
-                        deleteButtonId: "#delete-{{ group.group.pk }}",
-                        containerId: "#formset_container_{{ group.charparm_formset.prefix }}",
-                        templateId: "#charparm-{{ group.group.pk }}-template",
-                        postClick: function() {
-                            exp = +$('#exp').html();
-                            exp = exp-$(this).attr("cost");
-                            $('#exp').html(exp);
-                            $('.btnadd').each(function(){
+                    {% if group.group.cost_to_add > -1 and can_do %}
+                    <a id="add-{{ group.group.pk }}" cost="{{group.group.cost_to_add}}" class="glyphicon glyphicon-plus pull-right add_group_button btn-success" style="text-decoration: none;" type="button"></a>
+                    <!--<button id="delete-{{ group.group.pk }}" type="button">Delete</button>-->
+                    <script type="text/html" id="charparm-{{ group.group.pk }}-template">
+                        <fieldset class="charparm-{{ group.group.pk }}-__prefix__" style="display: none;">
+                            {{ group.charparm_formset.empty_form.as_p }}
+                        </fieldset>
+                    </script>
+                    <script>
+                        $('#add-{{ group.group.pk }}').djangoInlineFormAdd({
+                            prefix: "{{ group.charparm_formset.prefix }}",
+                            deleteButtonId: "#delete-{{ group.group.pk }}",
+                            containerId: "#formset_container_{{ group.charparm_formset.prefix }}",
+                            templateId: "#charparm-{{ group.group.pk }}-template",
+                            postClick: function() {
                                 exp = +$('#exp').html();
-                                cost = +$(this).attr("cost");
-                                if (exp-cost<0) {
-                                    $(this).attr("disabled", true);
-                                } else {
-                                    $(this).attr("disabled", false);
-                                }
-                            });
-                        }
-                    });
-                </script>
-            {% endif %}
-            <div class="cp_tooltiptext">{{ group.group.flavour }}</div>
-        </div>
+                                exp = exp-$(this).attr("cost");
+                                $('#exp').html(exp);
+                                $('.btnadd').each(function(){
+                                    exp = +$('#exp').html();
+                                    cost = +$(this).attr("cost");
+                                    if (exp-cost<0) {
+                                        $(this).attr("disabled", true);
+                                    } else {
+                                        $(this).attr("disabled", false);
+                                    }
+                                });
+                            }
+                        });
+                    </script>
+                    {% endif %}
+                </div>
+            </div>
         <div id="formset_container_{{ group.charparm_formset.prefix }}">
         {% for form in group.charparm_formset %}
             {% if form.instance.override_cost > -1 %}
@@ -78,7 +81,7 @@
                 {{ form.id }}
                 <div class="hidden">{{ form.name }} {{ form.flavour }}</div>
                 <div class="charparm" id="{{form.id.initial}}" cost="{{ cost }}" initial="{{ form.value.initial }}">
-                        {% if parms.gm %} {{ form.DELETE }} {% endif %}
+                        <!-- {% if parms.gm %} {{ form.DELETE }} {% endif %} -->
                         <div class="cp_tooltip">{{ form.name.initial }}
                         <div class="cp_tooltiptext">{{ form.flavour.initial }}</div></div>
                         {{ form.value }}
@@ -148,7 +151,7 @@
                     <div id="item">
                         {{ parms.itemformset.empty_form.id }}
                         {{ parms.itemformset.empty_form.DELETE }}{{ parms.itemformset.empty_form.name }}
-                            {{ parms.itemformset.empty_form.flavour }}
+                        {{ parms.itemformset.empty_form.flavour }}
                         {{ parms.itemformset.empty_form.count }}
                         {{ parms.itemformset.empty_form.is_active}}
                         {{ parms.itemformset.empty_form.item }}

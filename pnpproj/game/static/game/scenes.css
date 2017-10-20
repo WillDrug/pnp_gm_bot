@@ -10,6 +10,9 @@
 }
 /********************************************************************/
 /*** PANEL DEFAULT ***/
+.with-nav-tabs.panel-default {
+    margin-bottom: 0px;
+}
 .with-nav-tabs.panel-default .nav-tabs > li > a,
 .with-nav-tabs.panel-default .nav-tabs > li > a:hover,
 .with-nav-tabs.panel-default .nav-tabs > li > a:focus {
@@ -48,4 +51,12 @@
 .with-nav-tabs.panel-default .nav-tabs > li.dropdown .dropdown-menu > .active > a:focus {
     color: #fff;
     background-color: #555;
+}
+
+.panel-body {
+    padding: 10px;
+    border-style: solid;
+    border-width: 1px;
+    border-color: #f7e0e0;
+    border-top: none;
 }

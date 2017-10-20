@@ -5,7 +5,7 @@
 {% with "mid_pane" as midid %}
 <body>
     <div class="container-fluid">
-	  <div class="row">
+	  <div class="clearfix">
           <div class="col-md-2" id="left_pane">
               {% block left %}
               {% endblock %}
@@ -20,7 +20,7 @@
           </div>
         </div>
     </div>
-      <div class="row">
+      <div class="clearfix">
           <div class="col-md-12" id="footer">
               {% block bot %}
               {% endblock %}

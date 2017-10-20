@@ -9,7 +9,7 @@ from game.models import Character, CharParm, Influence, InfSet, Item, Status, Pa
 from game.forms import NewSettingForm, NewGameForm
 from django.contrib.auth.decorators import login_required
 from django.forms import inlineformset_factory, modelformset_factory
-
+from django import forms
 
 def generate_menu(request):
     playing = Players.objects.filter(user=request.user).all()
@@ -104,9 +104,16 @@ def switch_game(request, **kwargs):
 
 
 def add_languages(request): #also edit groups
-    LanguageFormSet = inlineformset_factory(Setting, Languages, fields=('name',), extra=0)
-    ParmGroupFormSet = inlineformset_factory(Setting, ParmGroup, fields=('name', 'flavour', 'cost_to_add', 'cost'),
+
+    LanguageFormSet = inlineformset_factory(Setting, Languages, fields=('name',), extra=1)
+    ParmGroupFormSetBase = inlineformset_factory(Setting, ParmGroup, fields=('name', 'flavour', 'cost_to_add', 'cost'),
                                              extra=0)
+
+    class ParmGroupFormSet(ParmGroupFormSetBase):
+        def add_fields(self, form, index):
+            super(ParmGroupFormSet, self).add_fields(form, index)
+            form.fields["flavour"] = forms.CharField(widget=forms.Textarea(attrs={'class': 'pg_area', 'placeholder': 'Описание', }))
+            form.fields["name"] = forms.CharField(widget=forms.TextInput(attrs={'class': 'pg_text', 'placeholder': 'Название', }))
 
     setting_to_edit = Setting.objects.filter(pk=request.GET['setting']).first()
     if setting_to_edit is None:

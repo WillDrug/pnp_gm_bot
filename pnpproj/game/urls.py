@@ -18,7 +18,8 @@ urlpatterns = [
     url(r'finish_action/(?P<action>[0-9]*)/?$', views.finish_action, name='finish_action'),
     url(r'add_roll/(?P<action>[0-9]*)/?$', views.add_roll, name='add_roll'),
     url(r'edit_roll/(?P<roll>[0-9]*)/?$', views.edit_roll, name='edit_roll'),
-    url(r'edit_action/(?P<action>[0-9]*)/?$', views.edit_action, name='edit_action')
+    url(r'edit_action/(?P<action>[0-9]*)/?$', views.edit_action, name='edit_action'),
+    url(r'new_npc/?$', views.new_npc, name='new_npc')
 ]
 
 

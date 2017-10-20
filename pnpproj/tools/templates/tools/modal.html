@@ -43,10 +43,10 @@
            success: function(data)
            {
                if (data.reload) {
-                    reload(data.id, data.url)
-                    $('#modal_close').click()
+                    reload(data.id, data.url);
+                    $('#modal_close').click();
                } else {
-                    $('#inner_content').parent().html(data)
+                    $('#inner_content').parent().html(data);
                }
            }
          });

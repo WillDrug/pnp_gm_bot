@@ -1,32 +1,46 @@
 <div id="char_list_container">
+    {% load static %}
+    <link rel="stylesheet" type="text/css" href="{% static 'game/charparm.css' %}" />
 SOME_LINKS
 <form method="POST" action="{{ parms.action_url }}" id="char_list">
 {% csrf_token %}
 {{ parms.formset.management_form }}
-    <table>
-        <tr>
-            <td>name</td>
-            <td>known</td>
-            <td>exp</td>
-            <td>pause</td>
-            <td>levelup</td>
-            <td>scene</td>
-        </tr>
-{% for form in parms.formset %}
-        <tr>
-            <td><a href="{% url 'char_edit' form.instance.pk %}" class="char_edit_link">{{ form.instance.name }}</a></td>
-            <td>{{ form.known }}</td>
-            <td>{{ form.experience }}</td>
-            <td>{{ form.pause }}</td>
-            <td>{{ form.levelup }}</td>
-            <td>{{ form.scene }}</td>
-    {% for hidden in form.hidden_fields %}
-        {{ hidden }}
+<div>
+    {% for form in parms.formset %}
+        <div class="row panel panel-default">
+            <div class="col-md-12">
+                <a href="{% url 'char_edit' form.instance.pk %}" class="char_edit_link">{{ form.instance.name }}</a>
+            </div>
+            <div class="col-md-5">
+                <div class="row">
+                    <div class="col-md-12">
+                        <div class="row"><div class="col-md-6"><label>Известен</label></div><div class="col-md-2">{{ form.known }}</div></div>
+                        <div class="row"><div class="col-md-6"><label>Пауза</label></div><div class="col-md-2">{{ form.pause }}</div></div>
+                        <div class="row"><div class="col-md-6"><label>Левелап</label></div><div class="col-md-2">{{ form.levelup }}</div></div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-5">
+                <div class="row">
+                    <div class="col-md-6"><label>Удалить</label></div><div class="col-md-2">{{ form.DELETE }}</div>
+                </div>
+                <div class="row">
+                    <div class="col-md-4"><label>Опыт</label></div><div class="col-md-6">{{ form.experience }}</div>
+                </div>
+                <div class="row">
+                    <div class="col-md-4"><label>Сцена</label></div><div class="col-md-6">{{ form.scene }}</div>
+                </div>
+            </div>
+            {% for hidden in form.hidden_fields %}
+                {{ hidden }}
+            {% endfor %}
+        </div>
     {% endfor %}
-    </tr>
-{% endfor %}
-    </table>
-    <input type="submit" value="LOLZ">
+    <div class="row">
+        <a class="pull-right" href="{% url 'new_npc' %}">New char</a>
+    </div>
+</div>
+<input type="submit" value="LOLZ">
 </form>
 
 <script>
