@@ -4,7 +4,8 @@ from django.contrib.auth.models import User
 from game.models import Character, CharParm, Influence, InfSet, Item, Status, ParmGroup, Players, Setting, Game, \
     Languages, Scene, Action, Roll, RollVisibility
 from game.forms import BaseCharForm, GMCharForm, ItemForm, StatusForm, InfSetForm, ParmGroupForm, GroupInlineForm, \
-    SceneForm, GMActionForm, GMCharActionSubmitForm, PlayerActionSubmitForm, CharChooseForm, RollForm, VisibilityForm
+    SceneForm, GMActionForm, GMCharActionSubmitForm, PlayerActionSubmitForm, CharChooseForm, RollForm, VisibilityForm, \
+    GMFullActionEdit
 from django.contrib.auth.decorators import login_required
 from django.urls import reverse
 from django.forms import inlineformset_factory, modelformset_factory
@@ -291,7 +292,6 @@ def scenes(request, **kw):
     except KeyError:
         initial = False
     scene = kw.pop('scene')
-    print(scene)
     if scene == '-1':
         scene = None
     else:
@@ -304,6 +304,8 @@ def scenes(request, **kw):
         parms['parms']['scenes'] = Scene.objects.filter(game=game).all()
     else:
         parms['parms']['gm'] = False
+        character = get_char(request.user)
+        scene = character.scene
     if scene is not None:
         if scene.game.invite != request.user.first_name:
             return HttpResponse('BULLSHIT!!!')
@@ -565,10 +567,6 @@ def add_roll(request, **kw):
                         visibility.roll = roll
                         visibility.save()
                         return dict(reload=True, id='action'+str(action.pk), url=reverse('get_action')+'?action='+str(action.pk))
-                    else:
-                        print(visform.errors)
-            else:
-                print(form.errors)
     else:
         form = CharChooseForm(action=action)
         title = 'Выберите Персонажа'
@@ -626,5 +624,30 @@ def edit_roll(request, **kw):
         deletable=True,
         rollform=roll_form,
         visibilityforms=visibility,
+        action_url=action_url
+    ))
+
+@ajax_request
+def edit_action(request, **kw):
+    action = kw.pop('action')
+    action_url = reverse('edit_action', kwargs=dict(action=action))
+    action = Action.objects.filter(pk=action).first()
+    if action.game.setting.owner != request.user:
+        return HttpResponse('bull bogus')
+    if request.method == 'POST':
+        if request.POST.get('DELETE') == 'true':
+            action.delete()
+            return dict(reload=True, id='action' + str(action.pk),
+                        url=reverse('get_action') + '?action=' + str(action.pk))
+        form = GMFullActionEdit(request.POST, instance=action)
+        if form.is_valid():
+            form.save()
+            return dict(reload=True, id='action' + str(action.pk),
+                        url=reverse('get_action') + '?action=' + str(action.pk))
+    else:
+        form = GMFullActionEdit(instance=action)
+    return render(request, 'game/action_edit_modal.html', dict(
+        deletable=True,
+        form=form,
         action_url=action_url
     ))

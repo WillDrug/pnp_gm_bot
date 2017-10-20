@@ -1,0 +1,45 @@
+{% extends 'tools/modal.html' %}
+{% block title %}{{ title }}{% endblock %}
+
+{% block form %}
+    <form method="POST" id="modal_form" action="{{ action_url }}">
+        {% csrf_token %}
+        {{ form }}
+        {{ form.errors }}
+        <input type="hidden" name="DELETE" id="delete_flag" value="false">
+    </form>
+    {% endblock %}
+
+{% block script %}
+<script>
+    $("#modal_form").submit(function(e) {
+    var url = $("#modal_form").attr('action');
+    e.preventDefault(); // avoid to execute the actual submit of the form.
+    $.ajax({
+           type: "POST",
+           url: url,
+           data: $("#modal_form").serialize(), // serializes the form's elements.
+           success: function(data)
+           {
+               if (data.reload) {
+                     $('#'+data.id).load(data.url)
+                     $('#modal_close').click()
+               } else {
+                    $('#inner_content').parent().html(data)
+               }
+           }
+         });
+
+
+    });
+    $("#modal_save").on("click", function(){
+        $("#modal_form").submit()
+    });
+    {% if deletable %}
+    $("#modal_delete").on("click", function(){
+        $("#delete_flag").attr("value", true)
+        $("#modal_form").submit()
+    });
+    {% endif %}
+</script>
+{% endblock %}

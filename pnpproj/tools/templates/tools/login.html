@@ -4,7 +4,7 @@
 <link rel="stylesheet" type="text/css" href="{% static 'tools/login.css' %}" />
 <div class="container">
     <form class="form-signin" method="POST" action="{% url 'login' %}"> <!--action="{% url 'login' %}" -->
-        <h1 class="form-signin-heading text-muted">Войти</h1>
+        <h1 class="form-signin-heading text-muted"><z>Войти</z></h1>
         {% if warning %}
             <p class="alert alert-danger">{{ warning }}</p>
         {% endif %}

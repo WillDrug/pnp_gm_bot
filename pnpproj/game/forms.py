@@ -1,7 +1,7 @@
 import base64
 import hashlib
 import time
-
+from django.utils import timezone
 from django import forms
 from game.models import Game, Setting, Character, Languages, ParmGroup, Scene, CharParm, Item, InfSet, Status, Action, \
     Roll, RollVisibility
@@ -165,7 +165,7 @@ class GMActionForm(forms.ModelForm):
         model = Action
         fields = ('response',)
 
-    response = forms.CharField(widget=forms.Textarea())
+    response = forms.CharField(widget=forms.Textarea(), required=False)
 
 
 class PlayerActionSubmitForm(forms.ModelForm):
@@ -285,3 +285,32 @@ class CharChooseForm(forms.Form):
         action = kw.pop('action')
         super(CharChooseForm, self).__init__(*ar, **kw)
         self.fields['char'].queryset = Character.objects.filter(game=action.game).all()
+
+class GMFullActionEdit(forms.ModelForm):
+    class Meta:
+        model = Action
+        fields = ('action', 'phrase', 'language', 'response', 'finished', 'private')
+
+    action = forms.CharField(widget=forms.Textarea(), required=False)
+    phrase = forms.CharField(widget=forms.Textarea(), required=False)
+    language = forms.ModelChoiceField(queryset=Languages.objects.none(), required=False)
+    response = forms.CharField(widget=forms.Textarea(), required=False)
+    finished = forms.BooleanField(required=False)
+    private = forms.BooleanField(required=False)
+
+    def __init__(self, *ar, **kw):
+        super(GMFullActionEdit, self).__init__(*ar, **kw)
+        self.fields['language'].queryset = self.instance.character.languages
+
+    def is_valid(self):
+        valid = super(GMFullActionEdit, self).is_valid()
+        if self.cleaned_data['phrase'] != '' and self.cleaned_data['language'] is None:
+            self._errors['Ошибка'] = ': Выберите язык'
+            valid = False
+        return valid
+
+    def save(self, commit=True):
+        super(GMFullActionEdit, self).save(commit)
+        if 'private' in self.changed_data:
+            self.instance.added = timezone.now()
+            self.instance.save()

@@ -63,7 +63,11 @@
   }
   .message {
     margin: 15px 0 0;
-    color: #b3b3b3;
+    color: #675f5f;
     font-size: 12px;
     text-align: right;
+  }
+
+  .text-muted z {
+    color: #da8213;
   }

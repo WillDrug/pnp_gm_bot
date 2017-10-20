@@ -1,6 +1,7 @@
-/*body {
+body {
     background: white url("images/bg.jpg");
-}*/
+    background-color: white
+}
 .hidden {
     display: none;
 }
@@ -25,3 +26,9 @@
 .accordion-toggle{cursor:pointer;}
 .accordion-inner{padding:9px 15px;border-top:1px solid #e5e5e5;}
 /* end gamemenu */
+
+.navbar  {
+border-bottom-style: solid;
+border-bottom-width: 1px;
+border-bottom-color: black;
+}

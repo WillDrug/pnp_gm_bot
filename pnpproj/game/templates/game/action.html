@@ -1,3 +1,12 @@
+{% if form.present %}
+<a id="editaction{{action.pk}}">[edit]</a>
+<script>
+    $("#editaction{{action.pk}}").on("click", function(){
+         $('#modal_content').load("{% url 'edit_action' action.pk %}");
+        $('#modal_show').click()
+    });
+</script>
+{% endif %}
 <p id="scene">
     {{action.scene_name}}
 </p>

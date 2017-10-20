@@ -1,20 +1,42 @@
 {% extends 'main/gameindex.html' %}
 {% block left %}
-              Мастер:<BR>
-              {% for key, value in menu.owning.items %}
-                Сеттинг <a href="{% url 'edit_setting' %}?setting={{ value.pk }}">{{ key }}</a>: <BR>
-                {% for i in value.games %}
-              &nbsp;&nbsp;&nbsp;&nbsp;<a href="{% url 'join_game' gamehash=i.key %}">{{i.name}}</a><br>
-                {% endfor %}
-              {% endfor %}
-<hr>
-              Игрок:<BR>
-              {% for key, value in menu.playing.items %}
-               Сеттинг {{ key }}: <BR>
-                {% for i in value %}
-&nbsp;&nbsp;&nbsp;&nbsp;<a href="/game/join/{{ i.key }}">{{i.name}}</a><br>
-                {% endfor %}
-              {% endfor %}
+<ul class="nav flex-column flex-nowrap">
+    <li class="nav-item">
+        <a class="nav-link collapsed">
+        Мастер
+        </a>
+        <ul class="flex-column pl-2 nav">
+            {% for key, value in menu.owning.items %}
+                <li class="nav-item">
+                    <a class="nav-link active"  href="{% url 'edit_setting' %}?setting={{ value.pk }}" class="nav-link">Сеттинг {{ key }}</a>
+                    <ul class="flex-column nav pl-4">
+                        {% for i in value.games %}
+                      <li class="nav-item"><a href="{% url 'join_game' gamehash=i.key %}">{{i.name}}</a></li>
+                        {% endfor %}
+                    </ul>
+                </li>
+            {% endfor %}
+        </ul>
+    </li>
+    <li class="nav-divider"></li>
+    <li class="nav-item">
+        Игрок
+        <ul class="flex-column pl-2 nav">
+            {% for key, value in menu.playing.items %}
+            <li class="nav-item">
+               Сеттинг {{ key }}
+                <ul class="flex-column nav pl-4">
+                    {% for i in value %}
+                        <li class="nav-item">
+                    <a class="nav-link active" href="/game/join/{{ i.key }}">{{i.name}}</a><br>
+                        </li>
+                    {% endfor %}
+                </ul>
+            </li>
+            {% endfor %}
+        </ul>
+    </li>
+</ul>
 
                     <div class="pull-right">
                         <a class="btn btn-lg btn-success" id="newgame" href="{% url 'new_game' %}">
