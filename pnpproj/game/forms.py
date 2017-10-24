@@ -4,7 +4,7 @@ import time
 from django.utils import timezone
 from django import forms
 from game.models import Game, Setting, Character, Languages, ParmGroup, Scene, CharParm, Item, InfSet, Status, Action, \
-    Roll, RollVisibility
+    Roll, RollVisibility, Influence
 
 
 class NewSettingForm(forms.ModelForm):
@@ -48,7 +48,7 @@ class BaseCharForm(forms.ModelForm):
                                    label='Обозначение персонажа (пока неизвестно имя)')
     flavour = forms.CharField(widget=forms.Textarea(attrs={'class': 'form-control'}),
                               label='Описание персонажа')
-    languages = forms.ModelMultipleChoiceField(queryset=Languages.objects.none(), label='Языки', required=False)
+    languages = forms.ModelMultipleChoiceField(widget=forms.CheckboxSelectMultiple(), queryset=Languages.objects.none(), label='Языки', required=False)
 
     def __init__(self, *ar, **kw):
         super(BaseCharForm, self).__init__(*ar, **kw)
@@ -76,11 +76,11 @@ class ItemForm(forms.ModelForm):
         model = Item
         fields = ('name', 'flavour', 'item', 'is_active', 'count')
 
-    name = forms.CharField(widget=forms.TextInput(), label='')
-    flavour = forms.CharField(widget=forms.Textarea(), label='')
+    name = forms.CharField(widget=forms.TextInput(attrs={'class': 'form-control'}), label='')
+    flavour = forms.CharField(widget=forms.Textarea(attrs={'class': 'form-control'}), label='')
     item = forms.ModelChoiceField(queryset=InfSet.objects.none(), label='', required=False)
     is_active = forms.BooleanField(required=False, label='')
-    count = forms.IntegerField(label='')
+    count = forms.IntegerField(widget=forms.NumberInput(attrs={'class': 'form-control'}), label='')
 
     def __init__(self, *ar, **kw):
         char = kw.pop('character', None)
@@ -93,9 +93,9 @@ class StatusForm(forms.ModelForm):
         model = Status
         fields = ('name', 'item', 'turns')
 
-    name = forms.CharField(widget=forms.TextInput(), label='')
+    name = forms.CharField(widget=forms.TextInput(attrs={'class': 'form-control'}), label='')
     item = forms.ModelChoiceField(queryset=InfSet.objects.none(), label='')
-    turns = forms.IntegerField(required=False)
+    turns = forms.IntegerField(widget=forms.NumberInput(attrs={'class': 'form-control'}), required=False)
 
     def __init__(self, *ar, **kw):
         char = kw.pop('character', None)
@@ -108,7 +108,7 @@ class InfSetForm(forms.ModelForm):
         model = InfSet
         fields = ('reference',)
 
-    reference = forms.CharField(widget=forms.TextInput(), label='Название Сета')
+    reference = forms.CharField(widget=forms.TextInput(attrs={'class': 'form-control'}), label='Название Сета')
 
     def is_valid(self, *ar, **kw):
         char = kw.pop('character')
@@ -121,8 +121,8 @@ class ParmGroupForm(forms.ModelForm):
         model = ParmGroup
         fields = ('name', 'flavour', 'cost_to_add', 'cost')
 
-    name = forms.CharField(widget=forms.TextInput, label='Название группы')
-    flavour = forms.CharField(widget=forms.Textarea, label='Описание группы')
+    name = forms.CharField(widget=forms.TextInput(attrs={'class': 'form-control'}), label='Название группы')
+    flavour = forms.CharField(widget=forms.Textarea(attrs={'class': 'form-control'}), label='Описание группы')
     cost_to_add = forms.IntegerField(label='Стоимость добавления нового')
     cost = forms.IntegerField(label='Стоимость поднятия навыка')
 
@@ -137,13 +137,13 @@ class GroupInlineForm(forms.ModelForm):
         model = CharParm
         fields = ('name', 'flavour', 'base_dice', 'value', 'override_cost', 'affected_by')
 
-    name = forms.CharField(widget=forms.TextInput, label='Название')
-    flavour = forms.CharField(widget=forms.Textarea, label='Описание')
-    base_dice = forms.IntegerField(label='Кубик')
-    multiple = forms.IntegerField(label='')
-    value = forms.IntegerField(label='Значение')
-    override_cost = forms.IntegerField(label='Стоимость (-1 = стоимость группы)')
-    affected_by = forms.ModelMultipleChoiceField(queryset=CharParm.objects.none(), required=False)
+    name = forms.CharField(widget=forms.TextInput(attrs={'class': 'form-control'}), label='Название')
+    flavour = forms.CharField(widget=forms.Textarea(attrs={'class': 'form-control'}), label='Описание')
+    base_dice = forms.IntegerField(label='Кубик', initial=100)
+    multiple = forms.IntegerField(label='Множитель', initial=10)
+    value = forms.IntegerField(label='Значение', initial=0)
+    override_cost = forms.IntegerField(label='Стоимость (-1 = стоимость группы)', initial=-1)
+    affected_by = forms.ModelMultipleChoiceField(widget=forms.CheckboxSelectMultiple(), queryset=CharParm.objects.none(), required=False)
 
     def __init__(self, *ar, **kw):
         character = kw.pop('character')
@@ -240,11 +240,10 @@ class GMCharActionSubmitForm(forms.ModelForm):
 class VisibilityForm(forms.ModelForm):
     class Meta:
         model = RollVisibility
-        fields = ('visible_dice_roll', 'visible_parm_bonus', 'visible_free_bonus', 'visible_difficulty', 'visible_result', 'visible_passed')
+        fields = ('visible_dice_roll', 'visible_bonus', 'visible_difficulty', 'visible_result', 'visible_passed')
 
     visible_dice_roll = forms.BooleanField(required=False, initial=True)
-    visible_parm_bonus = forms.BooleanField(required=False, initial=True)
-    visible_free_bonus = forms.BooleanField(required=False, initial=True)
+    visible_bonus = forms.BooleanField(required=False, initial=True)
     visible_difficulty = forms.BooleanField(required=False, initial=True)
     visible_result = forms.BooleanField(required=False, initial=True)
     visible_passed = forms.BooleanField(required=False, initial=True)
@@ -291,16 +290,17 @@ class GMFullActionEdit(forms.ModelForm):
         model = Action
         fields = ('action', 'phrase', 'language', 'response', 'finished', 'private')
 
-    action = forms.CharField(widget=forms.Textarea(), required=False)
-    phrase = forms.CharField(widget=forms.Textarea(), required=False)
+    action = forms.CharField(widget=forms.Textarea(attrs={'class': 'form-control'}), required=False)
+    phrase = forms.CharField(widget=forms.Textarea(attrs={'class': 'form-control'}), required=False)
     language = forms.ModelChoiceField(queryset=Languages.objects.none(), required=False)
-    response = forms.CharField(widget=forms.Textarea(), required=False)
+    response = forms.CharField(widget=forms.Textarea(attrs={'class': 'form-control'}), required=False)
     finished = forms.BooleanField(required=False)
     private = forms.BooleanField(required=False)
 
     def __init__(self, *ar, **kw):
         super(GMFullActionEdit, self).__init__(*ar, **kw)
-        self.fields['language'].queryset = self.instance.character.languages
+        if self.instance.character is not None:
+            self.fields['language'].queryset = self.instance.character.languages
 
     def is_valid(self):
         valid = super(GMFullActionEdit, self).is_valid()
@@ -314,3 +314,4 @@ class GMFullActionEdit(forms.ModelForm):
         if 'private' in self.changed_data:
             self.instance.added = timezone.now()
             self.instance.save()
+

@@ -32,6 +32,7 @@ def login_view(request):
     else:
         form = UserForm(auto_id=False)
         return render(request, 'tools/login.html', {'loginform': form, 'next_page': next_page})
+
 def logout_view(request):
     logout(request)
     return redirect('index')

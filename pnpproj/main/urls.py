@@ -8,5 +8,6 @@ urlpatterns = [
     url(r'^games/?$', views.gameindex, name='game_index'),
     url(r'^edit_setting/?$', views.add_languages, name='edit_setting'),
     url(r'^join/(?P<gamehash>.{16})/?$', views.switch_game, name='join_game'),
+    url(r'^rehash/(?P<gamehash>.{16})/?$', views.rehash, name='rehash'),
     url(r'^new/?$', views.new_game, name='new_game'),
 ]

@@ -1,9 +1,9 @@
-<div id="scenes">
+<div id="scenes" class="scenes-container">
     {% load static %}
     <link rel="stylesheet" type="text/css" href="{% static 'game/scenes.css' %}" />
 
     <div class="panel with-nav-tabs panel-default">
-        <div class="panel-heading">
+        <div class="pic-header panel-heading">
             {% if parms.gm %}
             <ul class="nav nav-tabs" style="min-height: 20px;">
                 {% for scene in parms.scenes %}
@@ -52,7 +52,7 @@
             </div>
             {% if parms.scene.pk %}
             {% if parms.gm %}
-            <input type="button" id="del-scene" value="Редактировать">
+            <input type="button" id="del-scene" class="btn btn-default pull-right" value="Редактировать">
             <script>
                 $("#del-scene").on("click", function(){
                      $("#modal_content").load("{% url 'scene_edit' parms.scene.pk %}");

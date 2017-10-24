@@ -6,6 +6,8 @@ from django.dispatch import receiver
 from django.db.models.signals import post_save
 import re
 from barnum import gen_data
+import random
+from math import ceil
 
 # Create your models here.
 class Setting(models.Model):
@@ -122,8 +124,7 @@ class CharParm(models.Model):
         root.append(self.name)
         for aff in self.affected_by.all():
             val += int(aff.true_value(root))
-        influences = Influence.objects.filter(infset__character=self.character).filter(affects=self).\
-            filter(visible=True).all()
+        influences = Influence.objects.filter(affects=self).filter(visible=True).all()
         for inf in influences:
             val += int(inf.value)
         return val  # to fix. how we display the value after items and shit.
@@ -133,16 +134,9 @@ class CharParm(models.Model):
         textlist = dict()
         for aff in self.affected_by.all():
             textlist[aff.name] = aff.true_value()
-        influences = Influence.objects.filter(infset__character=self.character).filter(affects=self).\
-            filter(visible=True).all()
+        influences = Influence.objects.filter(affects=self).filter(visible=True).all()
         for inf in influences:
-            item = Item.objects.filter(item=inf.infset).first()
-            status = Status.objects.filter(item=inf.infset).first()
-            if item is not None:
-                textlist[item.name] = inf.value
-            elif status is not None:
-                if status.visible:
-                    textlist[status.name] = inf.value
+            textlist[inf.affects.name] = inf.value
         return textlist
 
     def roll(self):
@@ -169,8 +163,11 @@ class CharParm(models.Model):
     def save(self, *args, **kwargs):
         if not self._state.adding and hasattr(self, '_loaded_values'):
             cost = self.override_cost if self.override_cost > -1 else self.group.cost
-            self.character.experience -= (self.value-self._loaded_values['value'])*cost
-            self.character.save()
+            if cost != -1:
+                self.character.experience -= (self.value-self._loaded_values['value'])*cost
+                self.character.save()
+            else:
+                self.value = 0
         else:
             cost = self.group.cost_to_add if self.group.cost_to_add > -1 else 0
             self.character.experience -= cost
@@ -185,11 +182,13 @@ class InfSet(models.Model):
     def affected_string(self):
         affects = Influence.objects.filter(infset=self).all()
         aff_list = dict()
+        question_counter = 1
         for aff in affects:
             if aff.visible:
                 aff_list[aff.affects.name] = aff.value
             else:
-                aff_list['???'] = '???'
+                aff_list[question_counter * '?'] = question_counter * '?'
+                question_counter += 1
         return aff_list
 
     def __str__(self):
@@ -286,9 +285,17 @@ class Roll(models.Model):
             self.parm_name = self.parm.name
         if char is not None:
             self.character = char
-        self.dice_roll = 100  #do random
+        self.dice_roll = self.roll()
         self.parm_bonus = 0 if self.parm is None else self.parm.roll_bonus()
         self.action = action
+
+    def roll(self, exploding=False):
+        roll = ceil(random.random()*self.base_dice)
+        if roll >= self.base_dice-self.base_dice*0.05:
+            roll += self.roll(exploding=True)
+        if not exploding and roll <= self.base_dice*0.05:
+            roll -= self.roll(exploding=True)
+        return roll
 
     def show_roll(self, player):
         roll = dict()
@@ -309,18 +316,18 @@ class Roll(models.Model):
             else:
                 full_visibility['passed'] = 'tie'
             return full_visibility
-
+        result = self.dice_roll+self.parm_bonus+self.free_bonus-self.difficulty
         roll['base_dice'] = self.base_dice
-        roll['dice_roll'] = self.dice_roll if visibility.visible_dice_roll else '???'
-        roll['parm_bonus'] = self.parm_bonus if visibility.visible_parm_bonus else '???'
-        roll['free_bonus'] = self.free_bonus if visibility.visible_free_bonus else '???'
-        roll['difficulty'] = self.difficulty if visibility.visible_difficulty else '???'
-        roll['result'] = self.dice_roll+self.parm_bonus+self.free_bonus-self.difficulty if visibility.visible_result else '???'
+        roll['dice_roll'] = self.dice_roll if visibility.visible_dice_roll else '?'
+        roll['bonus'] = self.parm_bonus + self.free_bonus if visibility.visible_bonus else '?'
+        roll['cool_sum'] = self.dice_roll+self.parm_bonus+self.free_bonus if visibility.visible_bonus and visibility.visible_dice_roll else '?'
+        roll['difficulty'] = self.difficulty if visibility.visible_difficulty else '?'
+        roll['result'] = result if visibility.visible_result else '?'
         if not visibility.visible_passed:
-            roll['passed'] = '???'
-        elif roll['result'] > 0:
+            roll['passed'] = '?'
+        elif result > 0:
             roll['passed'] = 'true'
-        elif roll['result'] < 0:
+        elif result < 0:
             roll['passed'] = 'false'
         else:
             roll['passed'] = 'tie'
@@ -330,8 +337,7 @@ class RollVisibility(models.Model):
     roll = models.ForeignKey(Roll, on_delete=models.CASCADE)
     player = models.ForeignKey(Players, on_delete=models.CASCADE)
     visible_dice_roll = models.BooleanField(default=True)
-    visible_parm_bonus = models.BooleanField(default=True)
-    visible_free_bonus = models.BooleanField(default=True)
+    visible_bonus = models.BooleanField(default=True)
     visible_difficulty = models.BooleanField(default=True)
     visible_result = models.BooleanField(default=True)
     visible_passed = models.BooleanField(default=True)

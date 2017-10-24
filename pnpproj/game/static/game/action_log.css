@@ -1,0 +1,94 @@
+
+.act_tooltip {
+    position: relative
+}
+
+.act_tooltip .act_tooltiptext {
+    visibility: hidden;
+    width: auto;
+    background-color: black;
+    color: #fff;
+    text-align: center;
+    border-radius: 6px;
+    padding: 5px 0;
+
+    /* Position the tooltip */
+    position: absolute;
+    left: 50px;
+    width: 200px;
+    z-index: 3;
+}
+
+.act_tooltip:hover .act_tooltiptext {
+    visibility: visible;
+}
+
+.msg {
+    padding: 3px 6px 2px;
+    border-bottom: 1px solid #ddd;
+}
+
+.msg-text {
+    background: #dfece7 none repeat scroll 0 0;
+    border: 1px solid #dfece7;
+    border-radius: 2px;
+    color: #1f2121;
+    background: #efecec none repeat scroll 0 0;
+    border: 1px solid #efecec;
+    border-radius: 5px;
+    color: #444;
+    margin: 5px 0 0 20px;
+    padding: 0px 5px 0px 5px;
+    position: relative;
+    width: fit-content;
+}
+
+.msg-text::after, .msg-text::before {
+    border-color: transparent #dfece7 transparent transparent;
+}
+.msg-text::before {
+    bottom: 100%;
+    border: solid transparent;
+    content: " ";
+    position: absolute;
+    border-bottom-color: #efecec;
+    border-width: 10px;
+}
+.msg-text::after {
+    border-width: 5px;
+    margin-top: -5px;
+}
+
+
+.marking {
+    font-size: x-small;
+    color: #040404;
+    position: absolute;
+    top: -10px;
+    left: 25px;
+    width: max-content;
+}
+
+.msg-wrap {
+    height: 70vh;
+    overflow: auto;
+    width: 100%;
+}
+
+.msg-wrap::-webkit-scrollbar {
+    width: 5px;
+}
+::-webkit-scrollbar {
+    width: 6px;
+}
+::-webkit-scrollbar-track {
+    -webkit-box-shadow: inset 0 0 6px rgba(0,0,0,0.3);
+    -moz-box-shadow:  inset 0 0 6px rgba(0,0,0,0.3);
+    box-shadow:  inset 0 0 6px rgba(0,0,0,0.3);
+}
+::-webkit-scrollbar-thumb {
+    background:#ddd;
+    -webkit-box-shadow: inset 0 0 6px rgba(0,0,0,0.5);
+    -moz-box-shadow:  inset 0 0 6px rgba(0,0,0,0.5);
+    box-shadow:  inset 0 0 6px rgba(0,0,0,0.5);
+}

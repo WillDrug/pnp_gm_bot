@@ -1,13 +1,17 @@
 <div id="char_list_container">
     {% load static %}
     <link rel="stylesheet" type="text/css" href="{% static 'game/charparm.css' %}" />
-SOME_LINKS
 <form method="POST" action="{{ parms.action_url }}" id="char_list">
 {% csrf_token %}
 {{ parms.formset.management_form }}
 <div>
+    <div class="row">
+        <div class="col-md-12">
+
+        </div>
+    </div>
     {% for form in parms.formset %}
-        <div class="row panel panel-default">
+        <div class="pic-paperback row panel panel-default">
             <div class="col-md-12">
                 <a href="{% url 'char_edit' form.instance.pk %}" class="char_edit_link">{{ form.instance.name }}</a>
             </div>
@@ -37,10 +41,15 @@ SOME_LINKS
         </div>
     {% endfor %}
     <div class="row">
-        <a class="pull-right" href="{% url 'new_npc' %}">New char</a>
+        <div class="col-md-5"></div>
+        <div class="col-md-2">
+            <a href="{% url 'new_npc' %}" class="glyphicon glyphicon-plus add_group_button btn-success" style="text-decoration: none; margin-top: 3px;" type="button"></a>
+        </div>
+        <div class="col-md-5">
+            <input type="submit" value="Сохранить" class="btn btn-success">
+        </div>
     </div>
 </div>
-<input type="submit" value="LOLZ">
 </form>
 
 <script>

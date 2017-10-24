@@ -1,10 +1,37 @@
+{% load extra_tags %}
 <div id="new_action">
     <form id="action_submit_form" action="{{parms.action_url}}">
         {% csrf_token %}
-         {{ parms.form }}
+         {{ parms.form.id }}
+        {% if parms.type == 'player' %}
+        action language phrase
+        <div class="row">
+            <div class="col-md-10">{{parms.form.action|attr:"placeholder:Действие"|attr:"rows:1"|add_class:"form-control"}}</div>
+            <div class="col-md-2"><input id="send" type="button" name="visible" value="Отправить" class="form-control btn btn-success"></div>
+        </div>
+        <div class="row">
+            <div class="col-md-2">{{parms.form.language|add_class:"form-control"}}</div>
+            <div class="col-md-8">{{parms.form.phrase|attr:"placeholder:Речь"|attr:"rows:1"|add_class:"form-control"}}</div>
+            <div class="col-md-2"><input id="send_hidden" type="button" name="invisible" value="Отправить мастеру" class="form-control btn btn-warning"></div>
+        </div>
+         {% else %}
+        <div class="row">
+            <div class="col-md-2">{{parms.form.scene|add_class:"form-control"}}</div>
+            <div class="col-md-8">{{parms.form.action|attr:"placeholder:Действие"|attr:"rows:1"|add_class:"form-control"}}</div>
+            <div class="col-md-2"><input id="send" type="button" name="visible" value="Отправить" class="form-control btn btn-success"></div>
+        </div>
+        <div class="row">
+            <div class="col-md-8">{{parms.form.response|attr:"placeholder:Завершение"|attr:"rows:1"|add_class:"form-control"}}</div>
+            <div class="col-md-2">
+                <label class="btn btn-success delete-check">
+                    <z style="margin-right: 10px">Завершено</z> {{parms.form.finished}}
+                </label>
+            </div>
+            <div class="col-md-2"><input id="send_hidden" type="button" name="invisible" value="Отправить мастеру" class="form-control btn btn-warning"></div>
+        </div>
+        {% endif %}
         <input id="hidden_visible" type="hidden" name="visible" value="true">
-        <input id="send" type="button" name="visible" value="Отправить">
-        <input id="send_hidden" type="button" name="invisible" value="Отправить скрытно">
+
     </form>
     {{ parms.form.errors }}
     <script>

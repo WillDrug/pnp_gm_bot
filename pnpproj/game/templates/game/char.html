@@ -8,11 +8,38 @@
     {% else %}
         {% define False as can_do %}
     {% endif %}
+
 <link rel="stylesheet" type="text/css" href="{% static 'game/tooltip.css' %}" />
 <link rel="stylesheet" type="text/css" href="{% static 'game/charparm.css' %}" />
 <script src="{% static 'tools/superformset.js' %}"></script>
-
-    <a id="edit_char">{{ parms.character.name }}</a> [<span id="exp">{{ parms.character.experience }}</span>]
+{% if parms.gm %}
+    <div class="clearfix panel panel-info">
+        <div class="col-md-10">
+            <a href="#" id="back_link" class="glyphicon glyphicon glyphicon-arrow-left"></a>
+            <script>
+                $('#back_link').on("click", function(){
+                    $('#char_container').parent().load("{% url 'char_list' %}");
+                });
+            </script>
+        </div>
+    </div>
+{% endif %}
+<div class="row media-body">
+        <div class="col-md-7">
+            <h4 class="media-heading"><a href='#' id="edit_char">{{ parms.character.name }}</a></h4>
+        </div>
+        <div class="col-md-3 label label-info">
+            <span id="exp">{{ parms.character.experience }}</span> EXP
+        </div>
+    <div class="col-md-2">
+            <a id='refresh_char' class="glyphicon glyphicon-refresh" style="color:green;"></a>
+            <script>
+                $('#refresh_char').on("click", function(){
+                    $('#char_container').parent().load("{% url 'char_edit' parms.character.pk %}");
+                });
+            </script>
+        </div>
+</div>
 <form method="POST" action="{{ parms.action_url }}" id="charparms">
     {% if can_do %}
     <script>
@@ -28,7 +55,17 @@
         {{ group.charparm_formset.management_form }}
             <div class="panel-heading">
                 <div class="panel-title">
-                    <a id="group{{group.group.pk}}">{{ group.group.name }}</a>
+                    <span id='folder_{{ group.charparm_formset.prefix }}' class="glyphicon glyphicon-triangle-right" style="padding-right: 10px" data-toggle="collapse" data-target="#formset_container_{{ group.charparm_formset.prefix }}" aria-expanded="true"></span>
+                    <script>
+                        $('#formset_container_{{ group.charparm_formset.prefix }}').on('shown.bs.collapse', function () {
+                           $("#folder_{{ group.charparm_formset.prefix }}").removeClass("glyphicon-triangle-right").addClass("glyphicon-triangle-bottom");
+                        });
+
+                        $('#formset_container_{{ group.charparm_formset.prefix }}').on('hidden.bs.collapse', function () {
+                           $("#folder_{{ group.charparm_formset.prefix }}").removeClass("glyphicon-triangle-bottom").addClass("glyphicon-triangle-right");
+                        });
+                    </script>
+                    <a href='#' id="group{{group.group.pk}}">{{ group.group.name }}</a>
                     <div class="pull-right cp_tooltip"><span class="glyphicon glyphicon-question-sign"></span><div class="cp_tooltiptext">{{ group.group.flavour }}</div></div>
                    {% if parms.gm %}
                     <script>
@@ -42,7 +79,22 @@
                     <!--<button id="delete-{{ group.group.pk }}" type="button">Delete</button>-->
                     <script type="text/html" id="charparm-{{ group.group.pk }}-template">
                         <fieldset class="charparm-{{ group.group.pk }}-__prefix__" style="display: none;">
-                            {{ group.charparm_formset.empty_form.as_p }}
+                            {% for hidden in group.charparm_formset.empty_form.hidden %}
+                                {{ hidden }}
+                            {% endfor %}
+                            {{ group.charparm_formset.empty_form.id }}
+                            <div class="row"><div class="col-md-12"><h5>Новое
+                                <div style="padding-right: 15px;" class="cp_tooltip pull-right"><span class="glyphicon glyphicon-question-sign"></span>
+                            <div class="cp_tooltiptext">Для удобства стоит держать "название" коротким.</div></div>
+                                </h5>
+                            </div></div>
+                            <div class="row"><div class="col-md-4">Название</div><div class="col-md-8">{{ group.charparm_formset.empty_form.name }}</div></div>
+                            <div class="row"><div class="col-md-4">Описание</div><div class="col-md-8">{{ group.charparm_formset.empty_form.flavour }}</div></div>
+                            {% if group.group.cost > -1 %}
+                            <div class="row"><div class="col-md-4">Значение</div><div class="col-md-8">{{ group.charparm_formset.empty_form.value }}</div></div>
+                            {% else %}
+                            <div class="row hidden"><div class="col-md-4">Значение</div><div class="col-md-8">{{ group.charparm_formset.empty_form.value }}</div></div>
+                            {% endif %}
                         </fieldset>
                     </script>
                     <script>
@@ -70,7 +122,7 @@
                     {% endif %}
                 </div>
             </div>
-        <div id="formset_container_{{ group.charparm_formset.prefix }}">
+        <div id="formset_container_{{ group.charparm_formset.prefix }}" style="padding-top: 5px; padding-bottom: 5px;" class="collapse">
         {% for form in group.charparm_formset %}
             {% if form.instance.override_cost > -1 %}
                 {% define form.instance.override_cost as cost %}
@@ -80,31 +132,27 @@
             <fieldset class="charparm_{{ group.charparm_formset.prefix }} charparm_{{ forloop.counter0 }}">
                 {{ form.id }}
                 <div class="hidden">{{ form.name }} {{ form.flavour }}</div>
-                <div class="charparm" id="{{form.id.initial}}" cost="{{ cost }}" initial="{{ form.value.initial }}">
-                        <!-- {% if parms.gm %} {{ form.DELETE }} {% endif %} -->
-                        <div class="cp_tooltip">{{ form.name.initial }}
-                        <div class="cp_tooltiptext">{{ form.flavour.initial }}</div></div>
-                        {{ form.value }}
+                <div class="row charparm" id="{{form.id.initial}}" cost="{{ cost }}" initial="{{ form.value.initial }}">
+                    <div class="cp_tooltip col-md-1"><span style="padding-left: 10px" class="glyphicon glyphicon-question-sign"></span><div class="cp_tooltiptext">{{ form.flavour.initial }}</div></div>
+                    <div class="col-md-5">{{ form.name.initial }}</div>
+                    <div class="col-md-1">{{ form.value }}</div>
                     {% define form.instance.affected_string.items as affects %}
                     {% if affects|length == 0 %}
-                        <div>{{ form.instance.true_value }}</div>
+                    <div class="col-md-1"> {{ form.instance.true_value }}</div>
                     {% else %}
-                        <div class="cp_tooltip">{{ form.instance.true_value }}
-                        <div class="cp_tooltiptext">
+                        <div class="cp_tooltip col-md-1">{{ form.instance.true_value }}<div class="cp_tooltiptext">
                         {% for fr, to in form.instance.affected_string.items %}
                             <p>{{ fr }}: +{{ to }}</p>
                         {% endfor %}
-                        </div>
+                        </div></div>
                         {% endif %}
                         {% if can_do %}
-                            <span class="char_buttons">
-                            <button type="button" anc="{{form.id.initial}}" class="btn btn-success btn-number btnplus" data-type="plus" data-field="quant[2]">
-                            +
-                            </button>
-                            <button type="button" anc="{{form.id.initial}}" class="btn btn-danger btn-number btnminus"  disabled data-type="minus" data-field="quant[2]">
-                            -
-                            </button>
-                            </span>
+                            <div class="char_buttons col-md-3">
+                                <span type="button" anc="{{form.id.initial}}" class="btn btn-danger btn-number btnminus glyphicon glyphicon-minus"  disabled>
+                                </span>
+                                <span anc="{{form.id.initial}}" class="btn btn-success btn-number btnplus glyphicon glyphicon-plus">
+                                </span>
+                            </div>
                         {% endif %}
                 </div>
             </fieldset>
@@ -115,15 +163,34 @@
 {% endfor %}
 
 {% if parms.gm %}
-    <div class="group" id="infsets">
-        <div>Блоки Влияния</div>
+    <div class="panel panel-default group" id="infsets">
+        <div class="panel-heading">
+            <div class="panel-title">
+                <span id='folder_influence_sets' class="glyphicon glyphicon-triangle-right" style="padding-right: 10px" data-toggle="collapse" data-target="#infset_container" aria-expanded="true"></span>
+                <script>
+                    $('#infset_container').on('shown.bs.collapse', function () {
+                       $("#folder_influence_sets").removeClass("glyphicon-triangle-right").addClass("glyphicon-triangle-bottom");
+                    });
+
+                    $('#infset_container').on('hidden.bs.collapse', function () {
+                       $("#folder_influence_sets").removeClass("glyphicon-triangle-bottom").addClass("glyphicon-triangle-right");
+                    });
+                </script>
+                <a>Блоки Влияния</a>
+            </div>
+        </div>
+        <div id="infset_container" style="padding-top: 5px; padding-bottom: 5px;" class="collapse">
         {% for infset in parms.infsets %}
-            <div class="cp_tooltip">
-                {{infset.DELETE}}<a id="infset{{infset.pk}}">{{ infset.reference }}</a>
-                <div class="cp_tooltiptext">
-                    {% for key, affect in infset.affected_string.items %}
-                    <p>{{key}}: +{{affect}}</p>
-                    {% endfor %}
+            <div class="row">
+                <div class="col-md-1"></div>
+                <div class="col-md-6"><a id="infset{{infset.pk}}">{{ infset.reference }}</a></div>
+                <div class="cp_tooltip col-md-2">
+                    <span class="glyphicon glyphicon-question-sign pull-right"></span>
+                    <div class="cp_tooltiptext">
+                        {% for key, affect in infset.affected_string.items %}
+                        <p>{{key}}: +{{affect}}</p>
+                        {% endfor %}
+                    </div>
                 </div>
             </div>
             <script>
@@ -133,70 +200,61 @@
                 });
             </script>
         {% endfor %}
-        <a id="new_inf_set">Добавить</a>
+            <div class="row"><div class="col-md-1"></div><div class="col-md-10"><a id="new_inf_set">Добавить</a></div></div>
         <script>
             $('#new_inf_set').on("click", function(){
                $("#modal_content").load("{% url 'inf_set_edit' parms.character.pk -1 %}");
                $("#modal_show").click()
             });
         </script>
-    </div>
-    <div class="group" id="items_container">
-        {{ parms.itemformset.management_form }}
-        <div class="cp_tooltip">
-            <div>Инвентарь</div>
-            <button id="add-item" class="btn btn-success btn-number btnplus" type="button">+</button>
-            <script type="text/html" id="items-template">
-                <fieldset class="items-__prefix__" style="display: none;">
-                    <div id="item">
-                        {{ parms.itemformset.empty_form.id }}
-                        {{ parms.itemformset.empty_form.DELETE }}{{ parms.itemformset.empty_form.name }}
-                        {{ parms.itemformset.empty_form.flavour }}
-                        {{ parms.itemformset.empty_form.count }}
-                        {{ parms.itemformset.empty_form.is_active}}
-                        {{ parms.itemformset.empty_form.item }}
-                    </div>
-                </fieldset>
-            </script>
-            <script>
-                $('#add-item').djangoInlineFormAdd({
-                    prefix: "{{ parms.itemformset.prefix }}",
-                    deleteButtonId: "#delete-item",
-                    containerId: "#items",
-                    templateId: "#items-template",
-                });
-            </script>
-        </div>
-        <div id = "items">
-        {% for form in parms.itemformset %}
-        <div class="item">
-            {{ form.id }}
-            <div class="cp_tooltip">{{ form.DELETE }}{{ form.name }}
-                <div class="cp_tooltiptext item_text">
-                    {{ form.flavour }}
-                </div>
-            </div>
-            {{ form.count }}
-            {{ form.is_active}}
-            {{ form.item }}
-        </div>
-        {% endfor %}
         </div>
     </div>
-    
-    <div class="group" id="status_container">
+
+    <div class="panel panel-default group" id="status_container">
         {{ parms.statusformset.management_form }}
-        <div class="cp_tooltip">
-            <div>Статусы</div>
-            <button id="add-status" class="btn btn-success btn-number btnplus" type="button">+</button>
+             <div class="panel-heading">
+                <div class="panel-title">
+                    <span id='folder_statuses' class="glyphicon glyphicon-triangle-right" style="padding-right: 10px" data-toggle="collapse" data-target="#statuses" aria-expanded="true"></span>
+                     <script>
+                    $('#statuses').on('shown.bs.collapse', function () {
+                       $("#folder_statuses").removeClass("glyphicon-triangle-right").addClass("glyphicon-triangle-bottom");
+                    });
+
+                    $('#statuses').on('hidden.bs.collapse', function () {
+                       $("#folder_statuses").removeClass("glyphicon-triangle-bottom").addClass("glyphicon-triangle-right");
+                    });
+                    </script>
+                    <span>Статусы</span>
+                    <div class="pull-right cp_tooltip"><span class="glyphicon glyphicon-question-sign"></span><div class="cp_tooltiptext">Статусы влияют на персонажа всегда. Если количество ходов не -1 -- то с каждым ходом оно будет уменьшаться. По достижению нуля - удалится.</div></div>
+                    <a id="add-status" class="glyphicon glyphicon-plus pull-right add_group_button btn-success" style="text-decoration: none;" type="button"></a>
+                </div>
+             </div>
             <script type="text/html" id="status-template">
                 <fieldset class="status-__prefix__" style="display: none;">
-                    <div class="status">
+                    <div class="status panel panel-default">
                         {{ parms.statusformset.empty_form.id }}
-                        {{ parms.statusformset.empty_form.DELETE }}{{ parms.statusformset.empty_form.name }}
-                        {{ parms.statusformset.empty_form.visible }}
-                        {{ parms.statusformset.empty_form.turns }}
-                        {{ parms.statusformset.empty_form.item}}
+                        <div class="row">
+                            <div class="col-md-12">
+                                {{ parms.statusformset.empty_form.name|attr:"placeholder:Название" }}
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">Кол-во ходов</div>
+                            <div class="col-md-6">Влияние</div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">{{ parms.statusformset.empty_form.turns }}</div>
+                            <div class="col-md-6">{{ parms.statusformset.empty_form.item|add_class:"form-control"}}</div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-7">
+                            </div>
+                            <div class="col-md-5">
+                                <label class="btn btn-danger delete-check">
+                                    <z style="margin-right: 10px">Удалить</z> {{ parms.statusformset.empty_form.DELETE }}
+                                </label>
+                            </div>
+                        </div>
                     </div>
                 </fieldset>
             </script>
@@ -208,45 +266,209 @@
                     templateId: "#status-template",
                 });
             </script>
-        </div>
-        <div id = "statuses">
+        <div id = "statuses" class="collapse">
         {% for form in parms.statusformset %}
-        <div id="status">
+        <div class="status panel panel-default ">
             {{ form.id }}
-            {{ form.DELETE }}{{ form.name }}
-            {{ form.visible}}
-            {{ form.turns}}
-            {{ form.item }}
+            <div class="row">
+                <div class="col-md-12">
+                    {{ form.name|attr:"placeholder:Название" }}
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-6">Кол-во ходов</div>
+                <div class="col-md-6">Влияние</div>
+            </div>
+            <div class="row">
+                <div class="col-md-6">{{ form.turns}}</div>
+                <div class="col-md-6">{{ form.item|add_class:"form-control" }}</div>
+            </div>
+            <div class="row">
+                <div class="col-md-7">
+                </div>
+                <div class="col-md-5">
+                    <label class="btn btn-danger delete-check">
+                        <z style="margin-right: 10px">Удалить</z> {{ form.DELETE }}
+                    </label>
+                </div>
+            </div>
         </div>
         {% endfor %}
         </div>
     </div>
-{% else %}
-    <div class="group" id="items_container">
-        <div>Инвентарь</div>
-        <div id="items">
+
+    <div class="panel panel-default group" id="">
+        <div class="panel-heading">
+            <div class="panel-title">
+                <span id='folder_inventory' class="glyphicon glyphicon-triangle-right" style="padding-right: 10px" data-toggle="collapse" data-target="#items_container" aria-expanded="true"></span>
+                <script>
+                    $('#items_container').on('shown.bs.collapse', function () {
+                       $("#folder_inventory").removeClass("glyphicon-triangle-right").addClass("glyphicon-triangle-bottom");
+                    });
+
+                    $('#items_container').on('hidden.bs.collapse', function () {
+                       $("#folder_inventory").removeClass("glyphicon-triangle-bottom").addClass("glyphicon-triangle-right");
+                    });
+                    </script>
+                <a>Инвентарь</a>
+                <div class="pull-right cp_tooltip"><span class="glyphicon glyphicon-question-sign"></span><div class="cp_tooltiptext">Предметы могут не влиять на игрока. Влияние определяется сетами влияния (выше)</div></div>
+                <a id="add-item" class="glyphicon glyphicon-plus pull-right add_group_button btn-success" style="text-decoration: none;" type="button"></a>
+            </div>
+        </div>
+        <div class="collapse" id="items_container">
+            {{ parms.itemformset.management_form }}
+            <div class="cp_tooltip">
+                <script type="text/html" id="items-template">
+                    <fieldset class="items-__prefix__" style="display: none; padding-bottom: 15px;" >
+                        <div id="item" class="">
+                            {{ parms.itemformset.empty_form.id }}
+                            <div class="row">
+                                <div class="col-md-12">{{ parms.itemformset.empty_form.name|append_attr:"placeholder:Название" }}</div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6">Кол-во</div>
+                                <div class="col-md-6">Влияние</div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6">{{ parms.itemformset.empty_form.count }}</div>
+                                <div class="col-md-6">{{ parms.itemformset.empty_form.item|add_class:"form-control" }}</div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-12">
+                                    {{ parms.itemformset.empty_form.flavour|append_attr:"placeholder:Описание"|attr:"rows:5" }}
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-2"></div>
+                                <div class="col-md-5" style="padding-right: 0px">
+                                    <label class="btn btn-danger delete-check">
+                                        <z style="margin-right: 10px">Удалить</z> {{ parms.itemformset.empty_form.DELETE }}
+                                    </label>
+                                </div>
+                                <div class="col-md-5" style="padding-left: 0px">
+                                    <label class="btn btn-success delete-check">
+                                        <z style="margin-right: 10px">Надет</z> {{ parms.itemformset.empty_form.is_active}}
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </fieldset>
+                </script>
+                <script>
+                $('#add-item').djangoInlineFormAdd({
+                    prefix: "{{ parms.itemformset.prefix }}",
+                    deleteButtonId: "#delete-item",
+                    containerId: "#items",
+                    templateId: "#items-template",
+                });
+            </script>
+            </div>
+            <div id = "items">
+                {% for form in parms.itemformset %}
+                <div id="item" class="item" style="padding-bottom: 15px;">
+                    {{ form.id }}
+                    <div class="row">
+                        <div class="col-md-12">{{ form.name|append_attr:"placeholder:Название" }}</div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">Кол-во</div>
+                        <div class="col-md-6">Влияние</div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">{{ form.count }}</div>
+                        <div class="col-md-6">{{ form.item|add_class:"form-control" }}</div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-12">
+                            {{ form.flavour|append_attr:"placeholder:Описание"|attr:"rows:1" }}
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-2"></div>
+                        <div class="col-md-5" style="padding-right: 0px">
+                            <label class="btn btn-danger delete-check">
+                                <z style="margin-right: 10px">Удалить</z> {{ form.DELETE }}
+                            </label>
+                        </div>
+                        <div class="col-md-5" style="padding-left: 0px">
+                            <label class="btn btn-success delete-check">
+                                <z style="margin-right: 10px">Надет</z> {{ form.is_active}}
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="group panel panel-default" id="">
+        <div class="panel-heading">
+            <div class="panel-title">
+                <span id='folder_inventory' class="glyphicon glyphicon-triangle-right" style="padding-right: 10px" data-toggle="collapse" data-target="#items_container" aria-expanded="true"></span>
+                <script>
+                    $('#items_container').on('shown.bs.collapse', function () {
+                       $("#folder_inventory").removeClass("glyphicon-triangle-right").addClass("glyphicon-triangle-bottom");
+                    });
+
+                    $('#items_container').on('hidden.bs.collapse', function () {
+                       $("#folder_inventory").removeClass("glyphicon-triangle-bottom").addClass("glyphicon-triangle-right");
+                    });
+                    </script>
+                <a>Инвентарь</a>
+                <div class="pull-right cp_tooltip"><span class="glyphicon glyphicon-question-sign"></span><div class="cp_tooltiptext">Предметы могут не влиять на игрока. Предметы добавляет и надевает Мастер</div></div>
+            </div>
+        </div>
+        <div id="items_container" class="collapse">
             {% for item in parms.items %}
-            <div class="item cp_tooltip">
-                {{item.is_active}}{{ item.name }}x{{item.count}}
-                <div class="cp_tooltiptext">
-                    {{item.flavour}}
+            <div class="clearfix panel" style="margin-top: 5px; margin-bottom: 0px">
+                <div class="col-md-1">
+                    <div class="cp_tooltip"><span class="dot dot--full {% if item.is_active %}green{% else %}red{%endif%}"></span>
+                    <div class="cp_tooltiptext">{% if item.is_active %}Надето{%else%}Не надето{%endif%}</div> </div>
+                </div>
+                <div class="col-md-3">{{ item.name }}</div>
+                <div class="col-md-3">x{{item.count}}</div>
+                <div class="col-md-3 pull-right cp_tooltip">
+                    <span class="glyphicon glyphicon-question-sign"></span>
+                    <div class="cp_tooltiptext">
+                        {{item.flavour}}
+                    </div>
                 </div>
             </div>
             {% endfor %}
         </div>
     </div>
-    <div class="group" id="status_container">
-        <div>Статусы</div>
-        <div id = "statuses">
+    <div class="group panel panel-default" id="status_container">
+        <div class="panel-heading">
+                <div class="panel-title">
+                    <span id='folder_statuses' class="glyphicon glyphicon-triangle-right" style="padding-right: 10px" data-toggle="collapse" data-target="#statuses" aria-expanded="true"></span>
+                     <script>
+                    $('#statuses').on('shown.bs.collapse', function () {
+                       $("#folder_statuses").removeClass("glyphicon-triangle-right").addClass("glyphicon-triangle-bottom");
+                    });
+
+                    $('#statuses').on('hidden.bs.collapse', function () {
+                       $("#folder_statuses").removeClass("glyphicon-triangle-bottom").addClass("glyphicon-triangle-right");
+                    });
+                    </script>
+                    <span>Статусы</span>
+                    <div class="pull-right cp_tooltip"><span class="glyphicon glyphicon-question-sign"></span><div class="cp_tooltiptext">Статусы влияют на игрока определенное кол-во ходов. <br>Если вы не видите на что влияет статус - изменение не отобразится в ваших параметрах</div></div>
+                </div>
+         </div>
+        <div id="statuses" class="collapse">
         {% for status in parms.status %}
         <div id="status">
-            <div class="cp_tooltip">
-            {{ status.name }}
-            <div class="cp_tooltiptext">
-                {% for key, value in status.affected_string.items %}
-                    <p>{{ key }}: +{{value}}</p>
-                {% endfor %}
-            </div>
+            <div class="clearfix panel" style="margin-top: 5px; margin-bottom: 0px">
+                <div class="col-md-1"></div>
+                <div class="col-md-3">{{ status.name }}</div>
+                <div class="col-md-3 pull-right cp_tooltip">
+                    <span class="glyphicon glyphicon-question-sign"></span>
+                    <div class="cp_tooltiptext">
+                        {% for key, value in status.affected_string.items %}
+                        <p>{{ key }}: +{{value}}</p>
+                        {% endfor %}
+                    </div>
+                </div>
             </div>
         </div>
         {% endfor %}
@@ -344,7 +566,7 @@
         e.preventDefault(); // avoid to execute the actual submit of the form.
     });
     </script>
-    <button type="submit" name="charparmssubmit" value="Сохранить">Сохранить</button>
+    <button class="btn btn-success pull-right" type="submit" name="charparmssubmit" value="Сохранить">Сохранить</button>
 </form>
 
 <script>

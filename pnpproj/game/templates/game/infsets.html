@@ -2,43 +2,127 @@
 {% block title %}Блоки Влияния{% endblock%}
 {% block form %}
 {% load static %}
+{% load extra_tags %}
 <script src="{% static 'tools/superformset.js' %}"></script>
 <link rel="stylesheet" type="text/css" href="{% static 'game/model_edit.css' %}" />
-<div id="infsets_container">
+<div id="infsets_container" class="clearfix">
     <form method="POST" id="modal_form" action="{{ action }}">
-        {% csrf_token %}
-         <input type="hidden" name="DELETE" id="delete_flag" value="false">
-        {{ setform }}
-        <div id="errors">
-            {% for error in errors %}
-            {{ error }}
+        <div class="row">
+            {% csrf_token %}
+             <input type="hidden" name="DELETE" id="delete_flag" value="false">
+            {% for hidden in setform.hidden %}
+                {{ hidden }}
             {% endfor %}
+            <div class="col-md-1"></div>
+            <div class="col-md-4"><span>Название сета</span></div>
+            <div class="col-md-6">{{ setform.reference }}</div>
+            <div class="col-md-1"></div>
         </div>
-        {{ formset.management_form }}
-        <script type="text/html" id="blank_form">
-            <fieldset class="hidden">
-                {{formset.empty_form.as_p}}
-            </fieldset>
-        </script>
-        <div id="infset">
-            {% for form in formset %}
-            <div class="influence">
-                {{ form.as_p }}
+        <div class="row">
+            <hr>
+        </div>
+        <div id="errors" class="row">
+            <div class="col-md-12">
+                {% for error in errors %}
+                {{ error }}
+                {% endfor %}
             </div>
-            {% endfor %}
         </div>
-        <button type="button" id="add-inf">Добавить</button>
-        <button type="button" id="delete-inf">Удалить</button>
-        <button type="submit" id="submit_inf">Готово</button>
-        <script>
-            $('#add-inf').djangoInlineFormAdd({
-                prefix: "{{ formset.prefix }}",
-                deleteButtonId: "#delete-inf",
-                containerId: "#infset",
-                templateId: "#blank_form",
-            });
-        </script>
+            {{ formset.management_form }}
+            <script type="text/html" id="blank_form">
+                <fieldset style="padding-top: 10px; padding-bottom: 10px; border-top-style: solid; border-top-width: 1px; border-top-color: grey">
+                    {% for hidden in formset.empty_form.hidden %}
+                        {{hidden}}
+                    {% endfor %}
+                    <div class="row">
+                        <div class="col-md-1"></div>
+                            <div class="col-md-5"><span>Параметр влияния</span></div>
+                            <div class="col-md-5"><span>Значение влияния</span></div>
+                        <div class="col-md-1"></div></div>
+                        <div class="row"><div class="col-md-1"></div>
+                            <div class="col-md-5">{{ formset.empty_form.affects|add_class:"form-control" }}</div>
+                            <div class="col-md-5">{{ formset.empty_form.value|add_class:"form-control" }}</div>
+                        <div class="col-md-1"></div>
+                    </div>
+                    <div class="row" style="padding-top: 5px;">
+                        <div class="col-md-1"></div>
+                        <div class="col-md-5">
+                            <label class="btn btn-success delete-check">
+                            <z style="margin-right: 10px">Игрок видит</z>{{ formset.empty_form.visible }}
+                            </label>
+                        </div>
+                        <div class="col-md-5">{{ formset.empty_form.id }}
+                            <label class="btn btn-danger delete-check">
+                                <z style="margin-right: 10px">Удалить</z> {{ formset.empty_form.DELETE }}
+                            </label>
+                        </div>
+                        <div class="col-md-1"></div>
+                    </div>
+                </fieldset>
+            </script>
+            <div id="infset">
+                {% for form in formset %}
+                <div class="influence">
+                    {% for hidden in form.hidden %}
+                        {{hidden}}
+                    {% endfor %}
+                    <div class="row">
+                        <div class="col-md-1"></div>
+                            <div class="col-md-5"><span>Параметр влияния</span></div>
+                            <div class="col-md-5"><span>Значение влияния</span></div>
+                        <div class="col-md-1"></div></div>
+                        <div class="row"><div class="col-md-1"></div>
+                            <div class="col-md-5">{{ form.affects|add_class:"form-control" }}</div>
+                            <div class="col-md-5">{{ form.value|add_class:"form-control" }}</div>
+                        <div class="col-md-1"></div>
+                    </div>
+                    <div class="row" style="padding-top: 5px;">
+                        <div class="col-md-1"></div>
+                        <div class="col-md-5">
+                            <label class="btn btn-success delete-check">
+                            <z style="margin-right: 10px">Игрок видит</z>{{ form.visible }}
+                            </label>
+                        </div>
+                        <div class="col-md-5">{{ form.id }}
+                            <label class="btn btn-danger delete-check">
+                                <z style="margin-right: 10px">Удалить</z> {{ form.DELETE }}
+                            </label>
+                        </div>
+                        <div class="col-md-1"></div>
+                </div>
+                {% endfor %}
+            </div>
+        <div class="row">
+            <div class="col-md-6"></div>
+            <div class="col-md-5">
+                <button type="button" id="add-inf" class="btn btn-success">Добавить</button>
+                <button type="button" id="delete-inf" class="btn btn-danger">Удалить</button>
+                <script>
+                    $('#add-inf').djangoInlineFormAdd({
+                        prefix: "{{ formset.prefix }}",
+                        deleteButtonId: "#delete-inf",
+                        containerId: "#infset",
+                        templateId: "#blank_form",
+                    });
+                </script>
+            </div>
+            <div class="col-md-1"></div>
+        </div>
     </form>
-    </div>
 </div>
+</div>
+
+<script>
+    $(function() {
+    $('.delete-check').tooltip({
+        placement: 'right',
+        title: 'Удалить'
+        });
+    });
+</script>
+<style>
+.delete-check input {
+    autocomplete: off;
+}
+</style>
 {% endblock %}

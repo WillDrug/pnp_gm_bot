@@ -191,8 +191,8 @@ def base_char_edit(request, **kw):
 
 @ajax_request
 def inf_set_edit(request, **kw):
-    character = kw.pop('character')
-    character = Character.objects.filter(pk=character).first()
+    character_id = kw.pop('character')
+    character = Character.objects.filter(pk=character_id).first()
     if not authenticate_by_char(request.user, character):
         return HttpResponse('bullshit')
     set = kw.pop('set')
@@ -224,7 +224,7 @@ def inf_set_edit(request, **kw):
             else:
                 errors.append(formset.errors)
             if errors.__len__() == 0:
-                return dict(reload=True, id="char_container", url=reverse('char_edit', kwargs=dict(character=char.pk)))
+                return dict(reload=True, id="char_container", url=reverse('char_edit', kwargs=dict(character=character_id)))
     setform = InfSetForm(instance=set, prefix='infset')
     formset = InfluenceFormSet(instance=set, prefix='influences')
     return render(request, 'game/infsets.html', dict(deletable=True,
@@ -355,12 +355,15 @@ def scene_edit(request, **kw):
 
 def action_log(request, gm):
     parms = dict(parms=dict())
-    actions = Action.objects.filter(game=get_game(request.user)).order_by('-added')[:10][::-1]
+    game = get_game(request.user)
+    actions = Action.objects.filter(game=game).order_by('-added')[:10][::-1]
     if gm:
         char = None
     else:
         char = get_char(request.user)
     parms['parms']['gm'] = gm
+    if gm:
+        parms['parms']['game'] = game.invite
     parms['parms']['actions'] = list()
     player = get_player(request.user)
     player.last_seen = timezone.now()
@@ -395,6 +398,7 @@ def action_submit(request, **kw):
     parms = dict(parms=dict())
     game = get_game(request.user)
     if char == '-1':
+        parms['parms']['type'] = 'gm'
         parms['parms']['action_url'] = reverse('action_submit', kwargs=dict(char='-1'))
         if request.method == 'POST':
             parms['parms']['form'] = GMCharActionSubmitForm(request.POST, game=game)
@@ -407,14 +411,14 @@ def action_submit(request, **kw):
                 action = parms['parms']['form'].save(commit=False)
                 action.scene_name = action.scene.name
                 action.game = game
-                if private is not None:
-                    action.private = True
+                action.private = private
                 action.save()
                 parms['parms']['form'] = GMCharActionSubmitForm(game=game)
 
         else:
             parms['parms']['form'] = GMCharActionSubmitForm(game=game)
     else:
+        parms['parms']['type'] = 'player'
         char = Character.objects.filter(pk=char).first()
         if not authenticate_by_char(request.user, char):
             return HttpResponse('BUUUUUUULLSHIT')
@@ -647,6 +651,7 @@ def edit_action(request, **kw):
     else:
         form = GMFullActionEdit(instance=action)
     return render(request, 'game/action_edit_modal.html', dict(
+        title='Редактировать Действие',
         deletable=True,
         form=form,
         action_url=action_url

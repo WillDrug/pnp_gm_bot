@@ -1,71 +1,113 @@
-{% if form.present %}
-<a id="editaction{{action.pk}}">[edit]</a>
-<script>
-    $("#editaction{{action.pk}}").on("click", function(){
-         $('#modal_content').load("{% url 'edit_action' action.pk %}");
-        $('#modal_show').click()
-    });
-</script>
-{% endif %}
-<p id="scene">
-    {{action.scene_name}}
-</p>
-<p id="char">
-    {{char}}<br>
-    <small>{{flavour}}</small>
-</p>
-<p id="action">
-    {{action.action}}
-</p>
-<p id="phrase">
-    <small>({{action.language}})</small>
-        {{ phrase }}
-</p>
-<p id="response">{{action.response}}</p>
-<ul id="rolls">
-    {% for roll in rolls %}
-        <a id="edit{{roll.key}}">{{ roll.char }} ({{ roll.parm }})</a>:
-        [{{ roll.parms.base_dice }}] {{ roll.parms.dice_roll }} + {{ roll.parms.parm_bonus }} + {{ roll.parms.free_bonus }} <> {{ roll.parms.difficulty }} = {{ roll.parms.result }} ({{ roll.parms.passed }})
-        {% if form.present %}
-        <script>
-            $('#edit{{roll.key}}').on("click", function(){
-                $('#modal_content').load("{% url 'edit_roll' roll.key %}");
-                $('#modal_show').click()
-            });
-        </script>
-        {% endif %}
+{% load static %}
+{% load extra_tags %}
+<div class="row" style="margin-bottom: -10px;">
+    <div class="col-md-2" style="padding-right: 0px; width: fit-content;">
+            <div class="act_tooltip" style="margin-left: 10px">{{char}}<div class="act_tooltiptext">{{flavour}}</div></div>
+    </div>
+    <div class="col-md-9">
+        {{action.action}}
+    </div>
+    <p class="pull-right text-muted">{{action.scene_name}}</p>
+</div>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="row">
+            <div class="col-md-12">
+                {% if action.language is not None %}
+                    <div class="msg-text">
+                        <span class="pull-left marking">{{action.language}}</span>
+                        {{ phrase }}
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-12" style="color: #ab7373; padding-left: 35px">
+                {% if form.present %}
+                    <form id="gmform{{action.pk}}" method="POST" action="{{form.action}}?action={{action.pk}}">
+                        {% csrf_token %}
+                        {{ form.form.id }}
+                        {{ form.form.response|attr:"rows:2"|attr:"style:width:100%" }}
+                        <button type="button" style="padding-right: 5px;" class="btn btn-default" id="editaction{{action.pk}}"><span class="glyphicon glyphicon-edit"></span>Редактировать</span></button>
+                        <script>
+                            $("#editaction{{action.pk}}").on("click", function(){
+                                $('#modal_content').load("{% url 'edit_action' action.pk %}");
+                                $('#modal_show').click()
+                            });
+                        </script>
+                        <button type="submit" value="" class="btn btn-success pull-right"><span class="glyphicon glyphicon-saved"></span>Завершить</button>
+                    </form>
+                    <script>
+                        $('#gmform{{action.pk}}').submit(function(e) {
+                            e.preventDefault();
+                            var url = $('#gmform{{action.pk}}').attr('action');
+                            $.ajax({
+                                   type: "POST",
+                                   url: url,
+                                   data: $('#gmform{{action.pk}}').serialize(), // serializes the form's elements.
+                                   success: function(data)
+                                   {
+                                       $('#action{{action.pk}}').html(data)
+                                   }
+                                 });
+                        });
+                    </script>
+                {% else %}
+                    {{action.response}}
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6 pull-right" style="padding-right: 30px; width: fit-content;">
+        {% for roll in rolls %}
+        <div class="row panel panel-default" style="margin-bottom:5px;">
+            <div class="col-md-12">
+                <a class="pull-left" style="padding-right: 10px;" id="edit{{roll.key}}"><img src="{% static 'tools/images/dice_25.png' %}"></a>
+                {{ roll.char }}({{ roll.parm }}):
+                <span class="act_tooltip">{{ roll.parms.dice_roll }}<span class="act_tooltiptext">1d{{ roll.parms.base_dice }}</span></span>
+                + {{ roll.parms.bonus }}
+                =
+                {{ roll.parms.cool_sum }}
+                <span class="glyphicon glyphicon-transfer"></span>
+                <span class="act_tooltip">{{ roll.parms.difficulty }}<span class="act_tooltiptext">Сложность</span></span>
+                <span class="glyphicon glyphicon-arrow-right"></span>
+                {{ roll.parms.result }}
+                {% if roll.parms.passed == 'true' %}
+                    <span class="glyphicon glyphicon-ok" style="color: green"></span>
+                {% elif roll.parms.passed == 'false' %}
+                    <span class="glyphicon glyphicon-remove" style="color: red"></span>
+                {% elif roll.parms.passed == 'tie' %}
+                    <span class="glyphicon glyphicon-ban-circle" style="color: #b1b10b"></span>
+                {% else %}
+                    <span class="glyphicon glyphicon-eye-close"></span>
+                {% endif %}
+                {% if form.present %}
+                <script>
+                    $('#edit{{roll.key}}').on("click", function(){
+                        $('#modal_content').load("{% url 'edit_roll' roll.key %}");
+                        $('#modal_show').click()
+                    });
+                </script>
+                {% endif %}
+            </div>
+        </div>
     {% endfor %}
-    {% if form.present %}
-        <button id="newroll{{action.pk}}">ROLL</button>
-        <script>
-            $('#newroll{{action.pk}}').on("click", function(){
-                $("#modal_content").load("{% url 'add_roll' action.pk %}");
-                $("#modal_show").click()
-            });
-        </script>
-    {% endif %}
-</ul>
-{% if form.present %}
-<p>
-    <form id="gmform{{action.pk}}" method="POST" action="{{form.action}}?action={{action.pk}}">
-    {% csrf_token %}
-    {{ form.form }}
-    <input type="submit" value="Завершить">
-    </form>
-</p>
-<script>
-    $('#gmform{{action.pk}}').submit(function(e) {
-        e.preventDefault();
-        var url = $('#gmform{{action.pk}}').attr('action');
-        $.ajax({
-               type: "POST",
-               url: url,
-               data: $('#gmform{{action.pk}}').serialize(), // serializes the form's elements.
-               success: function(data)
-               {
-                   $('#gmform{{action.pk}}').parent().html(data)
-               }
-             });
-    });
-</script>
-{% endif %}
+        {% if form.present %}
+            <div class="row" style="margin-bottom: 5px">
+                <div class="col-md-12">
+                    <button id="newroll{{action.pk}}" class="pull-right btn btn-default"><img src="{% static 'tools/images/dice_25.png' %}"></button>
+                    <script>
+                        $('#newroll{{action.pk}}').on("click", function(){
+                            $("#modal_content").load("{% url 'add_roll' action.pk %}");
+                            $("#modal_show").click()
+                        });
+                    </script>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+
+

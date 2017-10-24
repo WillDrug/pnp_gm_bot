@@ -1,3 +1,6 @@
+import base64
+import hashlib
+import time
 from django.shortcuts import render, redirect
 from django.urls import reverse
 from django.http import HttpRequest, HttpResponse
@@ -10,6 +13,7 @@ from game.forms import NewSettingForm, NewGameForm
 from django.contrib.auth.decorators import login_required
 from django.forms import inlineformset_factory, modelformset_factory
 from django import forms
+from annoying.decorators import ajax_request
 
 def generate_menu(request):
     playing = Players.objects.filter(user=request.user).all()
@@ -135,3 +139,29 @@ def add_languages(request): #also edit groups
     return render(request, 'main/add_languages.html', {'formset': formset,
                                                        'groupformset': grpformset,
                                                        'menu': generate_menu(request)})
+
+@ajax_request
+def rehash(request, **kw):
+    hash = kw.pop('gamehash')
+    if request.user.first_name != hash:
+        return HttpResponse('BOGUS BULL BULL WOW')
+
+    game = Game.objects.filter(invite=hash).first()
+    if game.setting.owner != request.user:
+        return HttpResponse('WOW NO')
+
+    hash_avail = False
+    while not hash_avail:
+        hasher = hashlib.sha1(request.user.__str__().encode('utf-8') + str(time.time()).encode('utf-8'))
+        new_hash = base64.urlsafe_b64encode(hasher.digest()[0:10]).decode('utf-8')
+        try_game = Game.objects.filter(invite=new_hash).first()
+        if try_game is None:
+            hash_avail = True
+    game.invite = new_hash
+    users = User.objects.filter(first_name=hash).all()
+    for user in users:
+        user.first_name = new_hash
+        user.save()
+    game.save()
+
+    return dict(newhash=reverse('join_game', kwargs=dict(gamehash=new_hash)))
