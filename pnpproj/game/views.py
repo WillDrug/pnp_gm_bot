@@ -374,6 +374,7 @@ def action_log(request, gm):
         temp = dict()
         temp['action'] = action
         temp['action_phrase'] = action.get_text(char)
+        temp['lang'] = action.language if parms['parms']['gm'] else action.get_lang(char)
         temp['char'] = action.character.__str__() if action.character is not None else 'Мир'
         temp['char_flavour'] = action.character.flavour if action.character is not None else 'Действие не совершается конкретным персонажем'
         temp['rolls'] = list()
@@ -489,6 +490,7 @@ def get_action(request):
     char_flavour = action.character.flavour if action.character is not None else 'Действие не совершается конкретным персонажем'
     rolls = list()
     rolls_objects = Roll.objects.filter(action=action).order_by('added').all()
+    lang = action.language if gm else action.get_lang(get_char(request.user))
     for roll in rolls_objects:
         temp_roll = dict()
         temp_roll['char'] = roll.character.__str__()
@@ -505,6 +507,7 @@ def get_action(request):
     return render(request, 'game/action.html', dict(
         action=action,
         char=char,
+        lang=lang,
         char_flavour=char_flavour,
         phrase=action.get_text(char),
         rolls=rolls,

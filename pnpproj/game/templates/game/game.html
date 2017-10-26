@@ -1,6 +1,8 @@
 {% extends 'main/gameindex.html' %}
-
 {% block navleft %}
+{% load static %}
+<script src="{% static 'main/rel_to_abs.js' %}"></script>
+<div id="ambiance" class="hidden"></div>
  <li class="nav-item"><a class="nav-link" href="{% url 'game_index' %}?menu">Выбор Игры</a></li>
 <div class="center hidden"><button id="modal_show" data-toggle="modal" data-target="#squarespaceModal" class="btn btn-primary center-block">Click Me</button></div>
 
@@ -25,12 +27,18 @@
 <div id="log">
     {% include 'game/action_log.html' with parms=action_parms.parms %}
 </div>
-<div id="form_container">
-
-</div>
 {% endblock %}
 
 
 {% block right %}
-{% include 'game/scenes.html' with parms=scene_parms.parms %}
+<div class="row" style="padding-bottom:20px;">
+    <div class="col-md-12">
+        {% include 'game/scenes.html' with parms=scene_parms.parms %}
+    </div>
+</div>
+<div class="row">
+    <div class="col-md-12">
+        {% include 'main/chat.html' %}
+    </div>
+</div>
 {% endblock %}

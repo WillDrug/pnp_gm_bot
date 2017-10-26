@@ -43,16 +43,41 @@
                         });
                     </script>
                     <i>{{ parms.scene.flavour }}</i>
-                    <ul id="online">
+                    <ul id="online" style="list-style-type: none; padding-left: 10px;">
                         {% for char in parms.chars %}
-                            <li><span>{{char.online}}</span>: {{char.char}}</li>
+                            <li><span class="dot dot--full {% if chat.online == 'False' %} green {% else %} red {% endif %}"></span>: {{char.char}}</li>
                         {% endfor %}
                     </ul>
                 </div>
             </div>
+            <div class="row pull-right" style="padding-right: 10px">
+                <a id="load_ambiance" {% if parms.scene.ambiance == '' %}class="hidden" {% endif %}><span class="glyphicon glyphicon-music"></span><small>Загрузить эмбиенс сцены</small></a>
+                <a id="stop_ambiance" class="hidden"><span class="glyphicon glyphicon-volume-off"></span><small>Остановить эмбиенс сцены</small></a>
+                <script>
+                    if ($('#ambiance').html() != '') {
+                        $('#load_ambiance').attr("class", "hidden");
+                        $('#stop_ambiance').attr("class", "");
+                    }
+                    $('#load_ambiance').on("click", function(){
+                        $('#ambiance').append('<iframe src="{{ parms.scene.ambiance }}">');
+                        $('#load_ambiance').attr("class", "hidden");
+                        $('#stop_ambiance').attr("class", "");
+                    });
+                    $('#stop_ambiance').on("click", function(){
+                        $('#ambiance').html('');
+                        {% if parms.scene.ambiance != '' %}
+                            $('#load_ambiance').attr("class", "");
+                        {% endif %}
+                        $('#stop_ambiance').attr("class", "hidden");
+                    });
+                </script>
+            </div>
+            <div class="clearfix"></div>
             {% if parms.scene.pk %}
             {% if parms.gm %}
-            <input type="button" id="del-scene" class="btn btn-default pull-right" value="Редактировать">
+            <div class="row" style="padding-right: 10px;">
+                <input type="button" id="del-scene" class="btn btn-default pull-right" value="Редактировать">
+            </div>
             <script>
                 $("#del-scene").on("click", function(){
                      $("#modal_content").load("{% url 'scene_edit' parms.scene.pk %}");
@@ -63,6 +88,7 @@
             {% endif %}
             <script>
             {% if parms.gm %}
+
                 setTimeout(function() {
                       $('#scenes').parent().load("{% url 'scenes' parms.scene.pk %}");
                     }

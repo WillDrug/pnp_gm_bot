@@ -1,0 +1,86 @@
+{% load static %}
+<link rel="stylesheet" type="text/css" href="{% static 'main/chat.css' %}" />
+<script src="{% static 'main/timeago.js' %}"></script>
+<div>
+    <div class="panel panel-default">
+        <div class="panel-heading">
+            <h5 class="panel-title">Чат</h5>
+        </div>
+        <div class="panel-body body-panel" id="chat_container">
+            <ul class="chat" id="chat_list" last="">
+
+            </ul>
+        </div>
+    </div>
+    <script>
+        $('#chat_container').scrollTop($('#chat_container')[0].scrollHeight);
+    </script>
+    <div class="row">
+        <form id='chat_form' method="POST" action="{% url 'chat' %}">
+            <div class="col-md-8" style="padding-right:0px">
+                <input class="form-control"  id='chat_input' autocomplete="off" type="text" name="msg">
+            </div>
+            <div class="col-md-4" style="padding-left: 0px">
+                <input id="chat_submit" class="form-control btn btn-success" type="submit">
+            </div>
+            <script>
+                function update_chat(data) {
+                    $.each(data, function(key, value) {
+                        $('#chat_list').append(
+                            '<li class="left clearfix"><div class="chat-body clearfix"><div class="header"><strong class="primary-font">'
+                            +value.user
+                            +'</strong><small class="pull-right text-muted"><span class="glyphicon glyphicon-time"></span>'
+                            +$.timeago(value.added)
+                            +'</small></div><p>'
+                            +value.msg
+                            +'</p></div></li>'
+                        )
+                    });
+                    $('#chat_container').scrollTop($('#chat_container')[0].scrollHeight);
+                }
+
+                var url = rel_to_abs($("#chat_form").attr("action"));
+                $.ajax({
+                    type: "GET",
+                    url: url+'?initial',
+                    contentType: "application/json; charset=utf-8",
+                    success: function(data) {
+                        update_chat(data);
+                        $('#chat_list').attr("last", data[data.length-1].added)
+                    }
+                });
+                $('#chat_form').submit(function(e){
+                    e.preventDefault(); // avoid to execute the actual submit of the form.
+                    $.ajax({
+                           type: "POST",
+                           url: url,
+                           data: $("#chat_form").serialize(), // serializes the form's elements.
+                           success: function(data) {
+                             update();
+                           }
+                         });
+                    $('#chat_input').val('');
+                });
+            </script>
+        </form>
+    </div>
+    <script>
+        function update() {
+            $.ajax({
+                type: "GET",
+                url: url + '?update='+$('#chat_list').attr("last"),
+                contentType: "application/json; charset=utf-8",
+                success: function(data) {
+                    update_chat(data);
+                    if (data.length != 0) {
+                        $('#chat_list').attr("last", data[data.length-1].added)
+                    }
+                }
+            });
+        }
+        setInterval(function() {
+            update()
+                        }
+                    , 5000);
+    </script>
+</div>

@@ -10,4 +10,5 @@ urlpatterns = [
     url(r'^join/(?P<gamehash>.{16})/?$', views.switch_game, name='join_game'),
     url(r'^rehash/(?P<gamehash>.{16})/?$', views.rehash, name='rehash'),
     url(r'^new/?$', views.new_game, name='new_game'),
+    url(r'^chat/?$', views.chat, name='chat'),
 ]

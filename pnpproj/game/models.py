@@ -39,6 +39,7 @@ class Scene(models.Model):
     game = models.ForeignKey(Game)
     name = models.CharField(max_length=50)
     flavour = models.CharField(max_length=2000)
+    ambiance = models.CharField(max_length=500, default='', blank=True)
 
     def __str__(self):
         return self.name
@@ -266,6 +267,12 @@ class Action(models.Model):
                 new_phrase += to_append
             return new_phrase
 
+    def get_lang(self, char):
+        if self.language in char.languages.all():
+            return self.language
+        else:
+            return '?'
+
 class Roll(models.Model):
 
     added = models.DateTimeField(auto_now_add=True)
@@ -304,10 +311,10 @@ class Roll(models.Model):
             full_visibility = dict(
                 base_dice=self.base_dice,
                 dice_roll=self.dice_roll,
-                parm_bonus=self.parm_bonus,
-                free_bonus=self.free_bonus,
+                bonus=self.parm_bonus+self.free_bonus,
                 difficulty=self.difficulty,
                 result=self.dice_roll+self.parm_bonus+self.free_bonus-self.difficulty,
+                cool_sum=self.dice_roll+self.parm_bonus+self.free_bonus
             )
             if full_visibility['result'] > 0:
                 full_visibility['passed'] = 'true'

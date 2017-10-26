@@ -154,10 +154,11 @@ class GroupInlineForm(forms.ModelForm):
 class SceneForm(forms.ModelForm):
     class Meta:
         model = Scene
-        fields = ('name', 'flavour')
+        fields = ('name', 'flavour', 'ambiance')
 
     name = forms.CharField(widget=forms.TextInput(), label='Название')
     flavour = forms.CharField(widget=forms.Textarea(), label='Описание')
+    ambiance = forms.CharField(widget=forms.TextInput(), label='Ссылка на ambient-mixer', required=False)
 
 
 class GMActionForm(forms.ModelForm):
@@ -263,9 +264,9 @@ class RollForm(forms.ModelForm):
         fields = ('parm', 'parm_name', 'free_bonus', 'difficulty')
 
     parm = forms.ModelChoiceField(queryset=CharParm.objects.none(), required=False)
-    parm_name = forms.CharField(widget=forms.TextInput(), required=False)
-    free_bonus = forms.IntegerField(initial=0)
-    difficulty = forms.IntegerField(initial=0)
+    parm_name = forms.CharField(widget=forms.TextInput(attrs={'class': 'form-control'}), required=False)
+    free_bonus = forms.IntegerField(widget=forms.NumberInput(attrs={'class': 'form-control'}), initial=0)
+    difficulty = forms.IntegerField(widget=forms.NumberInput(attrs={'class': 'form-control'}), initial=0)
 
     def __init__(self, *ar, **kw):
         try:
