@@ -22,21 +22,21 @@
     {% endif %}
 </script>
     </div>
-    <div id="actions" class="msg-wrap">
+    <div id="actions" class="msg-wrap" last="{% with parms.actions|last as last %}{{last.action.added|date:"c"}}{% endwith %}">
         {% for action in parms.actions %}
             <div  class="clearfix msg">
                 <div class="col-md-12" id="action{{action.action.pk}}">
-                    {% include 'game/action.html' with action=action.action char=action.char phrase=action.action_phrase flavour=action.char_flavour rolls=action.rolls form=action.form lang=action.lang %}
+                    {% include 'game/action.html' with action=action.action char=action.char phrase=action.action_phrase flavour=action.char_flavour rolls=action.rolls form=action.form lang=action.lang muted=action.muted %}
                 </div>
             </div>
         {% endfor %}
     </div>
     <script>
     $('#actions').scrollTop($('#actions')[0].scrollHeight);
-        setInterval(function() {
+    update_actions = function() {
                        $.ajax({
                            type: "GET",
-                           url: "{% url 'get_actions'  %}",
+                           url: "{% url 'get_actions'  %}?last="+$('#actions').attr("last"),
                            success: function(data)
                            {
                                $.each(data.new, function(key,val) {
@@ -46,11 +46,15 @@
                                     $('#actions').scrollTop($('#actions')[0].scrollHeight);
                                });
                                $.each(data.updated, function(key,val) {
-                                    $('#action'+val).load("{% url 'get_action' %}?action="+val)
+                                    $('#action'+val).load("{% url 'get_action' %}?action="+val);
                                });
+                               $('#actions').attr("last", data.new_time);
                            }
                          });
-                    }
+    }
+        setInterval(function() {
+                    update_actions()
+                }
                 , 10000);
     </script>
 </div>

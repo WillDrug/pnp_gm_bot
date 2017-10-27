@@ -45,7 +45,7 @@
                     <i>{{ parms.scene.flavour }}</i>
                     <ul id="online" style="list-style-type: none; padding-left: 10px;">
                         {% for char in parms.chars %}
-                            <li><span class="dot dot--full {% if chat.online == 'False' %} green {% else %} red {% endif %}"></span>: {{char.char}}</li>
+                            <li><span class="dot dot--full {% if char.online == True %} green {% else %} red {% endif %}"></span>: {{char.char}}</li>
                         {% endfor %}
                     </ul>
                 </div>

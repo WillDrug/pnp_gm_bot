@@ -2,14 +2,50 @@
 {% block title %}{{ title }}{% endblock %}
 
 {% block form %}
+{% load extra_tags %}
     <form method="POST" id="modal_form" action="{{ action_url }}">
         {% csrf_token %}
-        {{ rollform }}
+        {{ rollform.id }}
+         <div class="row">
+                <div class="col-md-6">Параметр для броска</div>
+                <div class="col-md-6">Имя параметра<div class="act_tooltip pull-right"><span class="pull-right glyphicon glyphicon-question-sign"></span><div class="act_tooltiptext"><small>Требуется при пустом поле "параметр". Если поле пустое туда подставится название выбранного параметра.</small></div></div></div>
+            </div>
+            <div class="row">
+                <div class="col-md-6">{{ rollform.parm|add_class:"form-control" }}</div>
+                <div class="col-md-6">{{ rollform.parm_name }}</div>
+            </div>
+            <div class="row">
+                <div class="col-md-6">Ситуационный бонус</div>
+                <div class="col-md-6">Сложность</div>
+            </div>
+            <div class="row">
+                <div class="col-md-6">{{ rollform.free_bonus }}</div>
+                <div class="col-md-6">{{ rollform.difficulty }}</div>
+            </div>
         {{ visibilityforms.management_form }}
-        {% for form in visibilityforms %}
-        {{ form.instance.player.get_char }}
-            {{ form }}
-        {% endfor %}
+        <ul class="d-flex flex-row">
+                {% for vform in visibilityforms %}
+                {{ vform.id }}
+                    <li class="p-2 col-md-6">
+                        <h5>{{ vform.instance.player.get_char }}</h5>
+                        <ul>
+                            <li>
+                                Виден бонус: {{ vform.visible_bonus }}
+                            </li>
+                            <li>
+                                Видна сложность: {{ vform.visible_difficulty }}
+                            </li>
+                            <li>
+                                Виден результат: {{ vform.visible_result }}
+                            </li>
+                            <li>
+                                Видно пройдено\не пройдено: {{ vform.visible_passed }}
+                            </li>
+                        </ul>
+                    </li>
+                {% endfor %}
+            </ul>
+        <div class="clearfix"></div>
          <input type="hidden" name="DELETE" id="delete_flag" value="false">
     </form>
     {% endblock %}

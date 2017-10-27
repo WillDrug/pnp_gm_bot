@@ -1,3 +1,4 @@
+{% load extra_tags %}
 <div id="inner_content">
 <div class="modal-header">
     <button type="button" class="close" id="modal_close" data-dismiss="modal"><span aria-hidden="true">×</span><span class="sr-only">Закрыть</span></button>
@@ -9,9 +10,13 @@
             {% csrf_token %}
             {{ form.errors }}
             {% for item in form %}
-            <div class="form-group">
-                <label>{{ item.label }}</label>
-                {{ item }}
+            <div class="form-group row">
+                <div class="col-md-6">
+                    {{ item.label }}
+                </div>
+                <div class="col-md-6">
+                    {{ item|add_class:"form-control" }}
+                </div>
             </div>
             {% endfor %}
              <input type="hidden" name="DELETE" id="delete_flag" value="false">

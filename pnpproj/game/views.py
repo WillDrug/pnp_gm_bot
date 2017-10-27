@@ -1,3 +1,4 @@
+from dateutil.parser import parse
 from django.shortcuts import render, redirect
 from django.http import HttpRequest, HttpResponse
 from django.contrib.auth.models import User
@@ -368,11 +369,19 @@ def action_log(request, gm):
     player = get_player(request.user)
     player.last_seen = timezone.now()
     player.save()
+
     for action in actions:
         if action.private and action.character != char and not gm:
             continue
         temp = dict()
         temp['action'] = action
+        if char is not None:
+            if action.scene != char.scene:
+                temp['muted'] = True
+            else:
+                temp['muted'] = False
+        else:
+            temp['muted'] = False
         temp['action_phrase'] = action.get_text(char)
         temp['lang'] = action.language if parms['parms']['gm'] else action.get_lang(char)
         temp['char'] = action.character.__str__() if action.character is not None else 'Мир'
@@ -447,6 +456,7 @@ def action_submit(request, **kw):
 
 @ajax_request
 def get_actions(request):
+    last = parse(request.GET.get('last'))
     player = get_player(request.user)
     game = get_game(request.user)
     if game.setting.owner == request.user:
@@ -470,6 +480,7 @@ def get_actions(request):
 
     player.last_seen = timezone.now()
     player.save()
+    resp['new_time'] = timezone.now().isoformat()
     return resp
 
 
@@ -486,6 +497,14 @@ def get_action(request):
     if action.game != game:
         return HttpResponse('BOGUS')
     player = get_player(request.user)
+    if gm:
+        muted = False
+    else:
+        user_char = get_char(request.user)
+        if user_char.scene != action.scene:
+            muted = True
+        else:
+            muted = False
     char = action.character.__str__() if action.character is not None else 'Мир'
     char_flavour = action.character.flavour if action.character is not None else 'Действие не совершается конкретным персонажем'
     rolls = list()
@@ -511,7 +530,8 @@ def get_action(request):
         char_flavour=char_flavour,
         phrase=action.get_text(char),
         rolls=rolls,
-        form=form
+        form=form,
+        muted=muted,
     ))
 
 def finish_action(request, **kw):

@@ -1,5 +1,6 @@
 {% load static %}
 {% load extra_tags %}
+<div {% if muted %}class="muted"{% endif %}>
 <div class="row" style="margin-bottom: -10px;">
     <div class="col-md-2" style="padding-right: 0px; width: fit-content;">
             <div class="act_tooltip" style="margin-left: 10px">{{char}}<div class="act_tooltiptext">{{flavour}}</div></div>
@@ -107,6 +108,7 @@
             </div>
         {% endif %}
     </div>
+</div>
 </div>
 
 
