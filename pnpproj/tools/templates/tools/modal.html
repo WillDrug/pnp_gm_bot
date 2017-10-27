@@ -38,6 +38,8 @@
 </div>
 {% block script %}
 <script>
+    $('input[type=checkbox]').removeClass('form-control');
+    $('ul').removeClass('form-control');
     $("#modal_form").submit(function(e) {
     var url = $("#modal_form").attr('action');
 

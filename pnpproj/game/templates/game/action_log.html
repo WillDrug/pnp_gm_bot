@@ -22,7 +22,7 @@
     {% endif %}
 </script>
     </div>
-    <div id="actions" class="msg-wrap" last="{% with parms.actions|last as last %}{{last.action.added|date:"U"}}.{{last.action.added|date:"u"}}{% endwith %}">
+    <div id="actions" class="msg-wrap" >
         {% for action in parms.actions %}
             <div  class="clearfix msg">
                 <div class="col-md-12" id="action{{action.action.pk}}">
@@ -41,7 +41,7 @@
     update_actions = function() {
                        $.ajax({
                            type: "GET",
-                           url: "{% url 'get_actions'  %}?last="+$('#actions').attr("last"),
+                           url: "{% url 'get_actions'  %}",
                            success: function(data)
                            {
                                $.each(data.new, function(key,val) {
@@ -55,7 +55,6 @@
                                $.each(data.updated, function(key,val) {
                                     $('#action'+val).load("{% url 'get_action' %}?action="+val);
                                });
-                               $('#actions').attr("last", data.new_time);
                            }
                          });
     }

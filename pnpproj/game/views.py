@@ -1,3 +1,4 @@
+from django.utils import dateformat
 from dateutil.parser import parse
 from django.shortcuts import render, redirect
 from django.http import HttpRequest, HttpResponse
@@ -456,9 +457,6 @@ def action_submit(request, **kw):
 
 @ajax_request
 def get_actions(request):
-    last = request.GET.get('last')
-    last = datetime.fromtimestamp(float(last)).astimezone(timezone.utc)
-    print(last)
     player = get_player(request.user)
     game = get_game(request.user)
     if game.setting.owner == request.user:
@@ -467,22 +465,21 @@ def get_actions(request):
         gm = False
     resp = dict()
     if gm:
-        new_actions = Action.objects.filter(added__gt=last).order_by('-added').all()[::-1]
+        new_actions = Action.objects.filter(added__gt=player.last_seen).order_by('-added').all()[::-1]
         resp['new'] = [action.pk for action in new_actions]
-        updated = Action.objects.filter(updated__gt=last, added__lte=last).all()
+        updated = Action.objects.filter(updated__gt=player.last_seen, added__lte=player.last_seen).all()
         resp['updated'] = [action.pk for action in updated]
     else:
         char = get_char(request.user)
-        new_actions = Action.objects.filter(added__gt=last).filter(private=False) | Action.objects.filter(added__gt=last).filter(character=char)
+        new_actions = Action.objects.filter(added__gt=player.last_seen).filter(private=False) | Action.objects.filter(added__gt=player.last_seen).filter(character=char)
         new_actions = new_actions.all()
         resp['new'] = [action.pk for action in new_actions]
-        updated = Action.objects.filter(updated__gt=last, added__lte=last).filter(private=False) | Action.objects.filter(updated__gt=last, added__lte=last)
+        updated = Action.objects.filter(updated__gt=player.last_seen, added__lte=player.last_seen).filter(private=False) | Action.objects.filter(updated__gt=player.last_seen, added__lte=player.last_seen)
         updated = updated.all()
         resp['updated'] = [action.pk for action in updated]
 
     player.last_seen = timezone.now()
     player.save()
-    resp['new_time'] = timezone.now().timestamp()
     return resp
 
 
