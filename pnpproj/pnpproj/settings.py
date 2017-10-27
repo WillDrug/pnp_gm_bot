@@ -50,6 +50,7 @@ MIDDLEWARE_CLASSES = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
 ]
 
 ROOT_URLCONF = 'pnpproj.urls'
@@ -127,3 +128,4 @@ STATIC_URL = '/static/'
 LOGIN_URL = '/tools/login'
 
 # ADDED SHIT
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
