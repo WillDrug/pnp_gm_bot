@@ -1,1 +1,0 @@
-web: gunicorn pnpproj.wsgi:application --log-file -
