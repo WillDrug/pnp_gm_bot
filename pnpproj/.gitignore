@@ -1,5 +1,4 @@
 pnpprojenv
-*.pyc
-staticfiles
-.env
+../.idea
 .idea
+pnpproj/.idea
