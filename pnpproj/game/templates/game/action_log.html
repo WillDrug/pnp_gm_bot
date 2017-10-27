@@ -22,7 +22,7 @@
     {% endif %}
 </script>
     </div>
-    <div id="actions" class="msg-wrap" last="{% with parms.actions|last as last %}{{last.action.added|date:"c"}}{% endwith %}">
+    <div id="actions" class="msg-wrap" last="{% with parms.actions|last as last %}{{last.action.added|date:"U"}}.{{last.action.added|date:"u"}}{% endwith %}">
         {% for action in parms.actions %}
             <div  class="clearfix msg">
                 <div class="col-md-12" id="action{{action.action.pk}}">
@@ -32,7 +32,12 @@
         {% endfor %}
     </div>
     <script>
-    $('#actions').scrollTop($('#actions')[0].scrollHeight);
+    scrollMessages = function() {
+        setTimeout(function() {
+            $('#actions').scrollTop($('#actions')[0].scrollHeight);
+        }, 1000)
+    }
+    scrollMessages();
     update_actions = function() {
                        $.ajax({
                            type: "GET",
@@ -41,10 +46,12 @@
                            {
                                $.each(data.new, function(key,val) {
                                     $.get("{% url 'get_action' %}?action="+val, function(data){
-                                        $('#actions').append('<div  class="clearfix msg"><div class="col-md-12" id="action'+val+'">'+data+'</div></div>');
-                                    });
-                                    $('#actions').scrollTop($('#actions')[0].scrollHeight);
+                                        $('#actions').append('<div class="clearfix msg"><div class="col-md-12" id="action'+val+'">'+data+'</div></div>');
+                                    })
                                });
+                               if (data.new.length > 0) {
+                                    scrollMessages();
+                               }
                                $.each(data.updated, function(key,val) {
                                     $('#action'+val).load("{% url 'get_action' %}?action="+val);
                                });

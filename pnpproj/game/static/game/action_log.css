@@ -73,6 +73,7 @@
     height: 70vh;
     overflow: auto;
     width: 100%;
+    border: 1px solid transparent;
 }
 
 .msg-wrap::-webkit-scrollbar {
