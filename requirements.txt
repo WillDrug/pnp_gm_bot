@@ -1,7 +1,0 @@
-barnum==0.5.1
-Django==1.11.6
-django-annoying==0.10.3
-future==0.16.0
-gunicorn==19.7.1
-pytz==2017.2
-whitenoise==3.3.1
