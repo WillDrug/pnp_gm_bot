@@ -17,7 +17,7 @@
                             <li class="divider"></li>
                                 <ul class="nav nav-pills nav-stacked tree">
                                     {% for i in value.games %}
-                                    <li><a href="{% url 'join_game' gamehash=i.key %}">{{ i.name }}</a></li>
+                                        <li><a href="{% url 'join_game' gamehash=i.key %}">{{ i.name }}</a></li>
                                     {% endfor %}
                                 </ul>
                             </li>

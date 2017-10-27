@@ -76,3 +76,33 @@ width:100%;
 .card-bot {
     margin-top: 50px;
 }
+
+
+.men_tooltip {
+    position: relative
+}
+
+.men_tooltip .men_tooltiptext {
+    visibility: hidden;
+    width: auto;
+    background-color: black;
+    color: #fff;
+    text-align: center;
+    border-radius: 6px;
+    padding: 5px 0;
+
+    /* Position the tooltip */
+    position: absolute;
+    left: 50px;
+    width: 200px;
+    z-index: 1;
+}
+
+.men_tooltip:hover .men_tooltiptext {
+    visibility: visible;
+}
+
+.item_text {
+    width: 198px;
+    align-self: center;
+}

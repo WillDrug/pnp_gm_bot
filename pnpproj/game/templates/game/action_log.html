@@ -3,14 +3,14 @@
 
 <div id="actions_container" class="panel panel-default">
     <div class="pic-header panel-heading">
-            <h4 class="panel-title">Игра
+            <h4 class="panel-title"><span class="act_tooltip">{{parms.game}}<span class="act_tooltiptext">{{parms.game.flavour}}</span></span>
                 {% if parms.gm %}<span class="pull-right">Ссылка на игру: <input id="hashlink" type="text"><span class="glyphicon glyphicon-refresh" id="rehash_game"></span></span>
                 <script>
-        $('#hashlink').val(rel_to_abs("{% url 'join_game' gamehash=parms.game %}"));
+        $('#hashlink').val(rel_to_abs("{% url 'join_game' gamehash=parms.game.invite %}"));
         $('#rehash_game').on("click", function(){
              $.ajax({
                    type: "GET",
-                   url: "{% url 'rehash' parms.game %}",
+                   url: "{% url 'rehash' parms.game.invite %}",
                    success: function(data)
                    {
                       $('#hashlink').val(rel_to_abs(data.newhash));
