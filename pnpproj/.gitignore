@@ -1,0 +1,5 @@
+pnpprojenv
+*.pyc
+staticfiles
+.env
+.idea

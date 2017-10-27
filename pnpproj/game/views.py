@@ -1,5 +1,3 @@
-from django.utils import dateformat
-from dateutil.parser import parse
 from django.shortcuts import render, redirect
 from django.http import HttpRequest, HttpResponse
 from django.contrib.auth.models import User
