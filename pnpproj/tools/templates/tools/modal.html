@@ -10,14 +10,14 @@
             {% csrf_token %}
             {{ form.errors }}
             {% for item in form %}
-            <div class="form-group row">
-                <div class="col-md-6">
-                    {{ item.label }}
+                <div class="form-group row">
+                    <div class="col-md-6">
+                        {{ item.label_tag }}
+                    </div>
+                    <div class="col-md-6">
+                        {{ item|add_class:"form-control" }}
+                    </div>
                 </div>
-                <div class="col-md-6">
-                    {{ item|add_class:"form-control" }}
-                </div>
-            </div>
             {% endfor %}
              <input type="hidden" name="DELETE" id="delete_flag" value="false">
         </form>

@@ -42,10 +42,10 @@
                data: $("#action_submit_form").serialize(), // serializes the form's elements.
                success: function(data)
                {
-                   $('#new_action').parent().html(data)
+                   $('#new_action').parent().html(data);
+                   update_actions();
                }
              });
-        update_actions();
         e.preventDefault(); // avoid to execute the actual submit of the form.
     });
 
