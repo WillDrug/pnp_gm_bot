@@ -11,5 +11,6 @@
     {% if action == 'game' %}
     <a id="newsetting" href="{% url 'new_game' %}?setting">Создать Сеттинг</a>
     {% endif %}
+    {{ form.errors }}
 </div>
 {% endblock %}

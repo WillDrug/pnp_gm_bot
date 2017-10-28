@@ -1,12 +1,44 @@
 {% extends 'main/gamemenu.html' %}
 {% block mid %}
 {% load static %}
+{% load extra_tags %}
 <script src="{% static 'tools/superformset.js' %}"></script>
 <link rel="stylesheet" type="text/css" href="{% static 'game/model_edit.css' %}" />
 <form method="POST" id="setform">
     <div class="row panel">
         <div class="pull-left"><h4>Редактирование Сеттинга</h4></div>
         <div class="pull-right"><button type="submit" class="save btn btn-success btaddn-default">Сохранить изменения</button></div>
+    </div>
+    <div class="row">
+        <div class="col-md-6">
+            <div class="row">
+                <div class="col-md-6">Название</div>
+                <div class="col-md-6">Описание</div>
+            </div>
+            <div class="row">
+                <div class="col-md-6">{{base_form.name|add_class:"form-control"}}</div>
+                <div class="col-md-6">{{base_form.flavour|add_class:"form-control"}}</div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            {{ gamesformset.management_form }}
+            {% for form in gamesformset %}
+                {{ form.id }}
+                <div class="row">
+                    <div class="col-md-3">Название игры</div>
+                    <div class="col-md-6">Описание игры</div>
+                </div>
+                <div class="row">
+                    <div class="col-md-3">{{form.name|add_class:"form-control"}}</div>
+                    <div class="col-md-6">{{form.flavour|add_class:"form-control"}}</div>
+                    <div class="col-md-3">
+                        <label class="btn btn-danger delete-check">
+                            <z style="margin-right: 10px">Удалить</z> {{ form.DELETE }}
+                        </label>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
     </div>
 <div class="row panel panel-default">
     <div class="col-md-9" style="margin-top: 5px; margin-bottom: 15px">
@@ -113,7 +145,7 @@
         </div>
         {% endfor %}
         </div>
-        <input type="button" id="plusgroup" value="Добавить">
+        <input type="button" class="btn btn-success pull-right" id="plusgroup" value="Добавить">
         <script>
             $('#plusgroup').djangoInlineFormAdd({
                 prefix: "{{ groupformset.prefix }}",

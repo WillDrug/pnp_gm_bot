@@ -13,14 +13,16 @@
                      	  <p class="card-p">
                         <ul class="nav nav-pills nav-stacked tree">
                             {% for key, value in menu.owning.items %}
-                            <li><label class="nav-header"><a href="{% url 'edit_setting' %}?setting={{ value.pk }}">{{ key }}</a></label>
-                            <li class="divider"></li>
-                                <ul class="nav nav-pills nav-stacked tree">
-                                    {% for i in value.games %}
-                                        <li><a href="{% url 'join_game' gamehash=i.key %}">{{ i.name }}</a></li>
-                                    {% endfor %}
-                                </ul>
-                            </li>
+                                <li>
+                                    <label class="nav-header"><a href="{% url 'edit_setting' %}?setting={{ value.pk }}" class="men_tooltip">{{ key }}</a></label>
+                                    <li><small class="pull-right text-muted grow">{{value.flavour}}</small></li>
+                                    <li class="divider"></li>
+                                    <ul class="nav nav-pills nav-stacked tree">
+                                        {% for i in value.games %}
+                                            <li><a href="{% url 'join_game' gamehash=i.key %}">{{ i.name }}</a></li>
+                                        {% endfor %}
+                                    </ul>
+                                </li>
                             {% endfor %}
                         </ul>
                         </p>

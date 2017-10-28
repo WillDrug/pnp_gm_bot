@@ -25,7 +25,7 @@ SECRET_KEY = '%ge**&3#7^0i7s)a5xdra57f7j5sjk7*8_f94uk1miuv5tggre'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['willdrug.pythonanywhere.com', '127.0.0.1', ]
 
 
 # Application definition

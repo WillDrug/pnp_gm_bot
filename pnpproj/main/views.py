@@ -36,6 +36,7 @@ def generate_menu(request):
             owning_full[i.name] = {'games': list(),
                                    'pk': i.pk}
         games_in_setting = Game.objects.filter(setting=i).all()
+        owning_full[i.name]['flavour'] = i.flavour
         for q in games_in_setting:
             owning_full[i.name]['games'].append({'name': q.name,
                                         'key': q.invite})
@@ -84,11 +85,13 @@ def new_game(request):
     settings = Setting.objects.filter(owner=request.user).all()
 
     if settings.__len__() == 0 or 'setting' in request.GET.keys():
-        form = NewSettingForm(None)
+        if request.method != 'POST':
+            form = NewSettingForm(None)
         title = 'Создайте Сеттинг'
         action = 'setting'
     else:
-        form = NewGameForm(user=request.user)  # , user=request.user)
+        if request.method != 'POST':
+            form = NewGameForm(user=request.user)  # , user=request.user)
         title = 'Создайте Игру'
         action = 'game'
 
@@ -112,7 +115,7 @@ def switch_game(request, **kwargs):
 
 
 def add_languages(request): #also edit groups
-
+    GamesEditFormSet = inlineformset_factory(Setting, Game, fields=('name','flavour'), can_delete=True, extra=0)
     LanguageFormSet = inlineformset_factory(Setting, Languages, fields=('name',), extra=1)
     ParmGroupFormSetBase = inlineformset_factory(Setting, ParmGroup, fields=('name', 'flavour', 'cost_to_add', 'cost'),
                                              extra=0)
@@ -129,6 +132,8 @@ def add_languages(request): #also edit groups
     if setting_to_edit.owner != request.user:
         return HttpResponse('fuck you')
     if request.method == 'POST' and request.POST.get('add_lang') == 'true':
+        base_form = NewSettingForm(request.POST, instance=setting_to_edit, prefix='base_form')
+        gamesformset = GamesEditFormSet(request.POST, instance=setting_to_edit, prefix='gamesset')
         formset = LanguageFormSet(request.POST, request.FILES, instance=setting_to_edit, prefix='langs')
         grpformset = ParmGroupFormSet(request.POST, instance=setting_to_edit, prefix='groups')
         if formset.is_valid():
@@ -137,11 +142,19 @@ def add_languages(request): #also edit groups
         if grpformset.is_valid():
             grpformset.save()
             grpformset = ParmGroupFormSet(instance=setting_to_edit, prefix='groups')
+        if base_form.is_valid():
+            base_form.save()
+        if gamesformset.is_valid():
+            gamesformset.save()
     else:
+        gamesformset = GamesEditFormSet(instance=setting_to_edit, prefix='gamesset')
+        base_form = NewSettingForm(instance=setting_to_edit, prefix='base_form')
         formset = LanguageFormSet(instance=setting_to_edit, prefix='langs')
         grpformset = ParmGroupFormSet(instance=setting_to_edit, prefix='groups')
     return render(request, 'main/add_languages.html', {'formset': formset,
                                                        'groupformset': grpformset,
+                                                       'gamesformset': gamesformset,
+                                                       'base_form': base_form,
                                                        'menu': generate_menu(request)})
 
 @ajax_request

@@ -93,9 +93,9 @@ width:100%;
 
     /* Position the tooltip */
     position: absolute;
-    left: 50px;
+    left: 100px;
     width: 200px;
-    z-index: 1;
+    z-index: 5;
 }
 
 .men_tooltip:hover .men_tooltiptext {
@@ -105,4 +105,12 @@ width:100%;
 .item_text {
     width: 198px;
     align-self: center;
+}
+
+.grow {
+    font-size: 8px;
+    transition: all .2s ease-in-out;
+}
+.grow:hover {
+    font-size: 16px;
 }
