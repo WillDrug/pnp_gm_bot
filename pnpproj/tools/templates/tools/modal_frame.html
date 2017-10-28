@@ -1,0 +1,10 @@
+{% extends 'tools/modal.html' %}
+{% block title %}Референс{% endblock %}
+{% block form %}<a href="{{href}}"><img id='ref_img' src="{{href}}" class="modal_iframe"></a>{% endblock %}
+{% block script %}
+
+<script>
+    $('#modal_save').attr("class", "hidden");
+
+</script>
+{% endblock %}

@@ -36,3 +36,7 @@ def login_view(request):
 def logout_view(request):
     logout(request)
     return redirect('index')
+
+def modal_iframe(request):
+    href = request.GET.get('href')
+    return render(request, 'tools/modal_frame.html', dict(href=href))

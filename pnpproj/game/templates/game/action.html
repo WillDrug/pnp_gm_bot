@@ -1,11 +1,14 @@
 {% load static %}
 {% load extra_tags %}
-<div {% if muted %}class="muted"{% endif %}>
+<script src="{% static 'game/makelink.js' %}"></script>
+<script type="text/javascript" src="{% static 'tools/livepreview/js/jquery-live-preview.js' %}"></script>
+<link href="{% static 'tools/livepreview/css/livepreview-demo.css' %}" rel="stylesheet" type="text/css">
+<div {% if muted %}class="muted"{% endif %} id="inner_action_container">
 <div class="row" style="margin-bottom: -10px;">
     <div class="col-md-2" style="padding-right: 0px; width: fit-content;">
             <div class="act_tooltip" style="margin-left: 10px">{{char}}<div class="act_tooltiptext">{{char_flavour}}</div></div>
     </div>
-    <div class="col-md-9">
+    <div class="col-md-9 action_text_wrap">
         {{action.action}}
     </div>
     <p class="pull-right text-muted">{{action.scene_name}}</p>
@@ -24,7 +27,7 @@
             </div>
         </div>
         <div class="row">
-            <div class="col-md-12" style="color: #ab7373; padding-left: 35px">
+            <div class="col-md-12 response_text_wrap" style="color: #ab7373; padding-left: 35px">
                 {% if form.present %}
                     <form id="gmform{{action.pk}}" method="POST" action="{{form.action}}?action={{action.pk}}">
                         {% csrf_token %}
@@ -109,7 +112,30 @@
         {% endif %}
     </div>
 </div>
+    <script>
+
+        $('.action_text_wrap').each(function() {
+            $(this).findLinkMakeLink('LINK');
+        });
+        $('.response_text_wrap').each(function() {
+            $(this).findLinkMakeLink('LINK');
+        });
+        $(document).ready(function() {
+            $(".livepreview").livePreview({
+                trigger: 'hover',
+                viewWidth:  300,
+                viewHeight: 200,
+                targetWidth: 1920,
+                targetHeight: 1080,
+                scale: '0.5',
+                offset: 10,
+                position: 'right'
+            });
+            $("a.livepreview").off("click").on("click", function(e) {
+                e.preventDefault();
+                $('#modal_content').load("{% url 'modal_frame' %}?href="+$(this).attr("href"));
+                $('#modal_show').click()
+            });
+        });
+    </script>
 </div>
-
-
-

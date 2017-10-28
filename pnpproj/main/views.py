@@ -214,7 +214,6 @@ def chat(request):
         return_list = list()
         for msg in messages:
             return_list.append(msg.as_dict)
-        print(return_list)
         return return_list
 
 
