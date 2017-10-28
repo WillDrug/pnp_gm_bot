@@ -209,10 +209,12 @@ def chat(request):
         game = get_game(request.user)
         datetime_object = datetime.strptime(update, '%Y-%m-%dT%H:%M:%S.%fZ')
         datetime_object += timedelta(milliseconds=2)
-        messages = Chat.objects.filter(game=game).filter(added__gt=datetime_object.astimezone(timezone.utc)).order_by('added').all()
+        datetime_object.replace(tzinfo=timezone.utc)
+        messages = Chat.objects.filter(game=game).filter(added__gt=datetime_object).order_by('added').all()
         return_list = list()
         for msg in messages:
             return_list.append(msg.as_dict)
+        print(return_list)
         return return_list
 
 
