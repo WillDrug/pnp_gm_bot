@@ -3,7 +3,8 @@
     height: 100%;
 }
 .act_tooltip {
-    position: relative
+    position: relative;
+    text-decoration: underline dotted grey;
 }
 
 .act_tooltip .act_tooltiptext {

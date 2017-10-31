@@ -356,7 +356,7 @@ def scene_edit(request, **kw):
 def action_log(request, gm):
     parms = dict(parms=dict())
     game = get_game(request.user)
-    actions = Action.objects.filter(game=game).order_by('-added')[:10][::-1]
+    actions = Action.objects.filter(game=game).order_by('-added').all()[:10][::-1]
     if gm:
         char = None
     else:
@@ -457,22 +457,43 @@ def action_submit(request, **kw):
 
 @ajax_request
 def get_actions(request):
-    last = request.GET.get("last")
-    last = datetime.fromtimestamp(float(last))
-    last += timedelta(milliseconds=2)
-    last = last.astimezone(timezone.utc)
-    player = get_player(request.user)
-    game = get_game(request.user)
-    resp = dict()
-    new_actions = Action.objects.filter(game=game).filter(added__gt=last).order_by('-added').all()
-    resp['new'] = [action.pk for action in new_actions]
-    updated = Action.objects.filter(game=game).filter(updated__gt=last, added__lte=last).all()
-    resp['updated'] = [action.pk for action in updated]
+    resp = None
 
+    last = request.GET.get("last")
+    if last is not None:
+        if last == '0':
+            last = datetime.min
+            last = last.replace(tzinfo=timezone.utc)
+        else:
+            last = datetime.fromtimestamp(float(last))
+            #last += timedelta(milliseconds=1)
+            last = last.astimezone(timezone.utc)
+        game = get_game(request.user)
+        resp = dict()
+        new_actions = Action.objects.filter(game=game).filter(added__gt=last).order_by('added').all()
+        resp['new'] = [action.pk for action in new_actions]
+        updated = Action.objects.filter(game=game).filter(updated__gt=last, added__lte=last).all()
+        resp['updated'] = [action.pk for action in updated]
+        return resp
+
+    first = request.GET.get("first")
+    if first is not None:
+        first = datetime.fromtimestamp(float(first))
+        #first -= timedelta(milliseconds=1)
+        first = first.astimezone(timezone.utc)
+        game = get_game(request.user)
+        resp = dict()
+        new_actions = Action.objects.filter(game=game).filter(added__lt=first).order_by('-added').all()[:10]
+        resp['new'] = [action.pk for action in new_actions]
+
+    player = get_player(request.user)
     player.last_seen = timezone.now()
     player.save()
-    return resp
 
+    if resp is not None:
+        return resp
+    else:
+        return HttpResponse("FUCK")
 
 def get_action(request):
     game = get_game(request.user)

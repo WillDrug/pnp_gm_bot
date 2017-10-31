@@ -36,16 +36,21 @@
         {% endfor %}
     </div>
     <script>
+    var scrollActBot = true;
     scrollMessages = function() {
-        setTimeout(function() {
-            $('#actions').scrollTop($('#actions')[0].scrollHeight);
-        }, 1000)
+        if (scrollActBot) {
+            setTimeout(function() {
+                $('#actions').scrollTop($('#actions')[0].scrollHeight);
+            }, 1000)
+        }
     }
     scrollMessages();
     update_actions = function() {
+                        var last_date = $('#actions .msg:last div div.inner_action_container').attr("added");
+                        if (!last_date) { last_date = 0 }
                        $.ajax({
                            type: "GET",
-                           url: "{% url 'get_actions'  %}?last="+$('#actions .msg:last div div.inner_action_container').attr("added"),
+                           url: "{% url 'get_actions'  %}?last="+last_date,
                            success: function(data)
                            {
                                $.each(data.new, function(key,val) {
@@ -67,6 +72,35 @@
                     update_actions()
                 }
                 , 10000);
+    infinite_actions = function() {
+                        var first_date = $('#actions .msg:first div div.inner_action_container').attr("added");
+                        if (!first_date) { first_date = 0 }
+                       $.ajax({
+                           type: "GET",
+                           url: "{% url 'get_actions'  %}?first="+first_date,
+                           success: function(data)
+                           {
+                               $.each(data.new, function(key,val) {
+                                    $.get("{% url 'get_action' %}?action="+val, function(data){
+                                        $('#actions').prepend('<div class="clearfix msg"><div class="col-md-12" id="action'+val+'">'+data+'</div></div>');
+                                    })
+                               });
+                               $('#actions').scrollTop(1);
+                           }
+                         });
+    }
+
+
+    $("#actions").on("scroll", function(){
+            if ($(this).scrollTop()==0) {
+               infinite_actions();
+            }
+            if($(this).scrollTop() + $(this).innerHeight() >= $(this)[0].scrollHeight) {
+                scrollActBot = true;
+            } else {
+                scrollActBot = false;
+            }
+        });
     </script>
 </div>
 <div class="row">

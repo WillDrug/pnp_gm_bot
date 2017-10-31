@@ -18,7 +18,7 @@
     <div class="row">
         <form id='chat_form' method="POST" action="{% url 'chat' %}">
             <div class="col-md-8" style="padding-right:0px">
-                <input class="form-control"  id='chat_input' autocomplete="off" type="text" name="msg">
+                <input class="form-control"  id='chat_input' autocomplete="off" required="true" type="text" name="msg">
             </div>
             <div class="col-md-4" style="padding-left: 0px">
                 <input id="chat_submit" class="form-control btn btn-success" type="submit">

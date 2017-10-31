@@ -78,7 +78,7 @@ def new_game(request):
             form = NewGameForm(request.POST)
             if form.is_valid():
                 form.save()
-                request.user.first_name = form.fields['invite']
+                request.user.first_name = form.cleaned_data['invite']
                 request.user.save()
                 return redirect(reverse('edit_setting')+'?setting='+str(form.cleaned_data.get('setting').pk))
 
@@ -198,6 +198,8 @@ def chat(request):
 
     if request.method == 'POST':
         msg = request.POST.get('msg')
+        if msg == '':
+            return dict(ok=True)
         game = get_game(request.user)
         new_msg = Chat(user=request.user, game=game, msg=msg[:255])
         new_msg.save()
@@ -207,9 +209,13 @@ def chat(request):
     update = request.GET.get('update')
     if update is not None:
         game = get_game(request.user)
-        datetime_object = datetime.strptime(update, '%Y-%m-%dT%H:%M:%S.%fZ')
-        datetime_object += timedelta(milliseconds=2)
-        datetime_object = datetime_object.replace(tzinfo=timezone.utc)
+        if update == '0':
+            datetime_object = datetime.min
+            datetime_object = datetime_object.replace(tzinfo=timezone.utc)
+        else:
+            datetime_object = datetime.strptime(update, '%Y-%m-%dT%H:%M:%S.%fZ')
+            #datetime_object += timedelta(milliseconds=2)
+            datetime_object = datetime_object.replace(tzinfo=timezone.utc)
         messages = Chat.objects.filter(game=game).filter(added__gt=datetime_object).order_by('added').all()
         return_list = list()
         for msg in messages:
@@ -220,7 +226,7 @@ def chat(request):
     if infinite is not None:
         game = get_game(request.user)
         datetime_object = datetime.strptime(infinite, '%Y-%m-%dT%H:%M:%S.%fZ')
-        datetime_object -= timedelta(milliseconds=2)
+        #datetime_object -= timedelta(milliseconds=2)
         datetime_object = datetime_object.replace(tzinfo=timezone.utc)
         messages = Chat.objects.filter(game=game).filter(added__lt=datetime_object).order_by('-added').all()[:10]
         return_list = list()
