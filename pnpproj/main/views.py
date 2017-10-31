@@ -190,7 +190,7 @@ def chat(request):
     if initial is not None:
         # get list of new ones
         game = get_game(request.user)
-        messages = Chat.objects.filter(game=game).order_by('-added').all()[:10][::-1]
+        messages = Chat.objects.filter(game=game).order_by('-added').all()[:10]
         return_list = list()
         for msg in messages:
             return_list.append(msg.as_dict)
@@ -209,12 +209,23 @@ def chat(request):
         game = get_game(request.user)
         datetime_object = datetime.strptime(update, '%Y-%m-%dT%H:%M:%S.%fZ')
         datetime_object += timedelta(milliseconds=2)
-        datetime_object.replace(tzinfo=timezone.utc)
+        datetime_object = datetime_object.replace(tzinfo=timezone.utc)
         messages = Chat.objects.filter(game=game).filter(added__gt=datetime_object).order_by('added').all()
         return_list = list()
         for msg in messages:
             return_list.append(msg.as_dict)
         return return_list
 
+    infinite = request.GET.get('infinite')
+    if infinite is not None:
+        game = get_game(request.user)
+        datetime_object = datetime.strptime(infinite, '%Y-%m-%dT%H:%M:%S.%fZ')
+        datetime_object -= timedelta(milliseconds=2)
+        datetime_object = datetime_object.replace(tzinfo=timezone.utc)
+        messages = Chat.objects.filter(game=game).filter(added__lt=datetime_object).order_by('-added').all()[:10]
+        return_list = list()
+        for msg in messages:
+            return_list.append(msg.as_dict)
+        return return_list
 
     return HttpResponse('nope')

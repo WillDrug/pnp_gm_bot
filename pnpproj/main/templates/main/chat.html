@@ -7,7 +7,7 @@
             <h5 class="panel-title">Чат</h5>
         </div>
         <div class="panel-body body-panel" id="chat_container">
-            <ul class="chat" id="chat_list" last="0">
+            <ul class="chat" id="chat_list" first="0" last="0">
 
             </ul>
         </div>
@@ -24,19 +24,34 @@
                 <input id="chat_submit" class="form-control btn btn-success" type="submit">
             </div>
             <script>
-                function update_chat(data) {
+                var scrollBot = true;
+                function update_chat(data, append) {
                     $.each(data, function(key, value) {
-                        $('#chat_list').append(
-                            '<li class="left clearfix"><div class="chat-body clearfix"><div class="header"><strong class="primary-font">'
-                            +value.user
-                            +'</strong><small class="pull-right text-muted"><span class="glyphicon glyphicon-time"></span>'
-                            +$.timeago(value.added)
-                            +'</small></div><p>'
-                            +value.msg
-                            +'</p></div></li>'
-                        )
+                        if (append) {
+                            $('#chat_list').append(
+                                '<li class="left clearfix"><div class="chat-body clearfix"><div class="header"><strong class="primary-font">'
+                                +value.user
+                                +'</strong><small class="pull-right text-muted"><span class="glyphicon glyphicon-time"></span>'
+                                +$.timeago(value.added)
+                                +'</small></div><p>'
+                                +value.msg
+                                +'</p></div></li>'
+                            )
+                        } else {
+                            $('#chat_list').prepend(
+                                '<li class="left clearfix"><div class="chat-body clearfix"><div class="header"><strong class="primary-font">'
+                                +value.user
+                                +'</strong><small class="pull-right text-muted"><span class="glyphicon glyphicon-time"></span>'
+                                +$.timeago(value.added)
+                                +'</small></div><p>'
+                                +value.msg
+                                +'</p></div></li>'
+                            )
+                        }
                     });
-                    $('#chat_container').scrollTop($('#chat_container')[0].scrollHeight);
+                    if (scrollBot) {
+                        $('#chat_container').scrollTop($('#chat_container')[0].scrollHeight);
+                    }
                 }
 
                 var url = rel_to_abs($("#chat_form").attr("action"));
@@ -46,7 +61,8 @@
                     contentType: "application/json; charset=utf-8",
                     success: function(data) {
                         update_chat(data);
-                        $('#chat_list').attr("last", data[data.length-1].added)
+                        $('#chat_list').attr("last", data[0].added)
+                        $('#chat_list').attr("first", data[data.length-1].added)
                     }
                 });
                 $('#chat_form').submit(function(e){
@@ -71,9 +87,9 @@
                 url: url + '?update='+$('#chat_list').attr("last"),
                 contentType: "application/json; charset=utf-8",
                 success: function(data) {
-                    update_chat(data);
+                    update_chat(data, true);
                     if (data.length != 0) {
-                        $('#chat_list').attr("last", data[data.length-1].added)
+                        $('#chat_list').attr("last", data[data.length-1].added);
                     }
                 }
             });
@@ -82,5 +98,27 @@
             update()
                         }
                     , 5000);
+
+        $("#chat_container").on("scroll", function(){
+            if ($(this).scrollTop()==0) {
+                $.ajax({
+                    type: "GET",
+                    url: url + '?infinite='+$('#chat_list').attr("first"),
+                    contentType: "application/json; charset=utf-8",
+                    success: function(data) {
+                        update_chat(data, false);
+                        if (data.length != 0) {
+                            $('#chat_list').attr("first", data[data.length-1].added)
+                        }
+                    }
+                });
+                $(this).scrollTop(1);
+            }
+            if($(this).scrollTop() + $(this).innerHeight() >= $(this)[0].scrollHeight) {
+                scrollBot = true;
+            } else {
+                scrollBot = false;
+            }
+        });
     </script>
 </div>

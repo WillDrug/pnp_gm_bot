@@ -312,7 +312,8 @@ class GMFullActionEdit(forms.ModelForm):
 
     def save(self, commit=True):
         super(GMFullActionEdit, self).save(commit)
-        if 'private' in self.changed_data:
+        """if 'private' in self.changed_data:
             self.instance.added = timezone.now()
             self.instance.save()
+        """
 

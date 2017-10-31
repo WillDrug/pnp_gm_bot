@@ -370,9 +370,11 @@ def action_log(request, gm):
     player.save()
 
     for action in actions:
-        if action.private and action.character != char and not gm:
-            continue
         temp = dict()
+        if action.private and action.character != char and not gm:
+            temp['hidden'] = True
+        else:
+            temp['hidden'] = False
         temp['action'] = action
         if char is not None:
             if action.scene != char.scene:
@@ -455,26 +457,17 @@ def action_submit(request, **kw):
 
 @ajax_request
 def get_actions(request):
+    last = request.GET.get("last")
+    last = datetime.fromtimestamp(float(last))
+    last += timedelta(milliseconds=2)
+    last = last.astimezone(timezone.utc)
     player = get_player(request.user)
     game = get_game(request.user)
-    if game.setting.owner == request.user:
-        gm = True
-    else:
-        gm = False
     resp = dict()
-    if gm:
-        new_actions = Action.objects.filter(added__gt=player.last_seen).order_by('-added').all()[::-1]
-        resp['new'] = [action.pk for action in new_actions]
-        updated = Action.objects.filter(updated__gt=player.last_seen, added__lte=player.last_seen).all()
-        resp['updated'] = [action.pk for action in updated]
-    else:
-        char = get_char(request.user)
-        new_actions = Action.objects.filter(added__gt=player.last_seen).filter(private=False) | Action.objects.filter(added__gt=player.last_seen).filter(character=char)
-        new_actions = new_actions.all()
-        resp['new'] = [action.pk for action in new_actions]
-        updated = Action.objects.filter(updated__gt=player.last_seen, added__lte=player.last_seen).filter(private=False) | Action.objects.filter(updated__gt=player.last_seen, added__lte=player.last_seen)
-        updated = updated.all()
-        resp['updated'] = [action.pk for action in updated]
+    new_actions = Action.objects.filter(game=game).filter(added__gt=last).order_by('-added').all()
+    resp['new'] = [action.pk for action in new_actions]
+    updated = Action.objects.filter(game=game).filter(updated__gt=last, added__lte=last).all()
+    resp['updated'] = [action.pk for action in updated]
 
     player.last_seen = timezone.now()
     player.save()
@@ -496,12 +489,17 @@ def get_action(request):
     player = get_player(request.user)
     if gm:
         muted = False
+        hidden = False
     else:
         user_char = get_char(request.user)
         if user_char.scene != action.scene:
             muted = True
         else:
             muted = False
+        if user_char != action.character and action.private:
+            hidden = True
+        else:
+            hidden = False
     char = action.character.__str__() if action.character is not None else 'Мир'
     char_flavour = action.character.flavour if action.character is not None else 'Действие не совершается конкретным персонажем'
     rolls = list()
@@ -529,6 +527,7 @@ def get_action(request):
         rolls=rolls,
         form=form,
         muted=muted,
+        hidden=hidden,
     ))
 
 def finish_action(request, **kw):
