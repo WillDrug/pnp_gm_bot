@@ -79,12 +79,12 @@ WSGI_APPLICATION = 'pnpproj.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.postgresql_psycopg2',
+        'ENGINE': 'django.db.backends.mysql',
         'NAME': 'django_db',
         'USER': 'django_user',
         'PASSWORD': 'django_passwd_temp',
         'HOST': 'localhost',
-        'PORT': '5432'
+        'PORT': '3306',
     }
 }
 

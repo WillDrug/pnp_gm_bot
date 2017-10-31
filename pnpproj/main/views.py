@@ -214,7 +214,7 @@ def chat(request):
             datetime_object = datetime_object.replace(tzinfo=timezone.utc)
         else:
             datetime_object = datetime.strptime(update, '%Y-%m-%dT%H:%M:%S.%fZ')
-            #datetime_object += timedelta(milliseconds=2)
+            datetime_object += timedelta(milliseconds=2)
             datetime_object = datetime_object.replace(tzinfo=timezone.utc)
         messages = Chat.objects.filter(game=game).filter(added__gt=datetime_object).order_by('added').all()
         return_list = list()

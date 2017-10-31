@@ -10,6 +10,7 @@ from barnum import gen_data
 import random
 from math import ceil
 
+
 # Create your models here.
 class Setting(models.Model):
     owner = models.ForeignKey(User, on_delete=models.CASCADE)
