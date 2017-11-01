@@ -364,8 +364,7 @@ def action_log(request, gm):
     else:
         char = get_char(request.user)
     parms['parms']['gm'] = gm
-    if gm:
-        parms['parms']['game'] = game
+    parms['parms']['game'] = game
     parms['parms']['actions'] = list()
     player = get_player(request.user)
     player.last_seen = timezone.now()
