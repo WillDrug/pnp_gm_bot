@@ -95,6 +95,7 @@ def char_list(request, **kw):
         charlist = CharListFormSet(request.POST, queryset=Character.objects.filter(game=game))
         if charlist.is_valid():
             charlist.save()
+            charlist = CharListFormSet(queryset=Character.objects.filter(game=game))
     else:
         charlist = CharListFormSet(queryset=Character.objects.filter(game=game))
     parms = dict()
