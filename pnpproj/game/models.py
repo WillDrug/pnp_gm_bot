@@ -9,7 +9,7 @@ import re
 from barnum import gen_data
 import random
 from math import ceil
-
+import time
 
 # Create your models here.
 class Setting(models.Model):
@@ -153,7 +153,7 @@ class CharParm(models.Model):
             values = list(values)
             values.reverse()
             values = [
-                values.pop() if f.attname in field_names else DEFERRED
+                values.pop() if f.attname in field_names else models.DEFERRED
                 for f in cls._meta.concrete_fields
                 ]
         instance = cls(*values)
@@ -229,8 +229,8 @@ class Influence(models.Model):
 
 
 class Action(models.Model):
-    added = models.DateTimeField(auto_now_add=True)
-    updated = models.DateTimeField(auto_now=True)
+    added = models.FloatField(default=0)
+    updated = models.FloatField(default=0)
     game = models.ForeignKey(Game)
     character = models.ForeignKey(Character, null=True)
     scene = models.ForeignKey(Scene, null=True, on_delete=models.SET_NULL)
@@ -241,6 +241,32 @@ class Action(models.Model):
     response = models.CharField(max_length=5000, blank=True)
     finished = models.BooleanField(default=False)
     private = models.BooleanField(default=False)
+
+    @classmethod
+    def from_db(cls, db, field_names, values):
+        # Default implementation of from_db() (subject to change and could
+        # be replaced with super()).
+        if len(values) != len(cls._meta.concrete_fields):
+            values = list(values)
+            values.reverse()
+            values = [
+                values.pop() if f.attname in field_names else models.DEFERRED
+                for f in cls._meta.concrete_fields
+            ]
+        instance = cls(*values)
+        instance._state.adding = False
+        instance._state.db = db
+        # customization to store the original field values on the instance
+        instance._loaded_values = dict(zip(field_names, values))
+        return instance
+
+    def save(self, *args, **kwargs):
+        if not self._state.adding and hasattr(self, '_loaded_values'):
+            self.updated = time.time()
+        else:
+            self.added = time.time()
+            self.updated = time.time()
+        super(Action, self).save(*args, **kwargs)
 
     def get_text(self, char):
         if self.phrase == '' or self.language is None:
@@ -277,7 +303,7 @@ class Action(models.Model):
 
 class Roll(models.Model):
 
-    added = models.DateTimeField(auto_now_add=True)
+    added = models.FloatField(default=0)
     action = models.ForeignKey(Action)
     character = models.ForeignKey(Character, on_delete=models.CASCADE, null=True)
     parm = models.ForeignKey(CharParm, on_delete=models.SET_NULL, null=True)
@@ -288,6 +314,10 @@ class Roll(models.Model):
     free_bonus = models.IntegerField(default=0)
     difficulty = models.IntegerField(default=0)
     # pass\surpass = diff - sum.
+
+    def save(self, *ar, **kw):
+        self.added = time.time()
+        super(Roll, self).save(*ar, **kw)
 
     def make_roll(self, action, char=None):
         if self.parm_name == '':

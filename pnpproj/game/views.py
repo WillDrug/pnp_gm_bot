@@ -13,6 +13,7 @@ from annoying.decorators import ajax_request
 from datetime import datetime, timedelta
 from django.utils import timezone
 from barnum import gen_data
+import time
 
 
 # functions
@@ -462,12 +463,9 @@ def get_actions(request):
     last = request.GET.get("last")
     if last is not None:
         if last == '0':
-            last = datetime.min
-            last = last.replace(tzinfo=timezone.utc)
+            last = 38600
         else:
-            last = datetime.fromtimestamp(float(last))
-            #last += timedelta(milliseconds=1)
-            last = last.astimezone(timezone.utc)
+            last = float(last)
         game = get_game(request.user)
         resp = dict()
         new_actions = Action.objects.filter(game=game).filter(added__gt=last).order_by('added').all()
@@ -478,9 +476,7 @@ def get_actions(request):
 
     first = request.GET.get("first")
     if first is not None:
-        first = datetime.fromtimestamp(float(first))
-        #first -= timedelta(milliseconds=1)
-        first = first.astimezone(timezone.utc)
+        first = float(first)
         game = get_game(request.user)
         resp = dict()
         new_actions = Action.objects.filter(game=game).filter(added__lt=first).order_by('-added').all()[:10]
@@ -571,6 +567,8 @@ def add_roll(request, **kw):
         return HttpResponse('bullshit')
     if action.game.setting.owner != request.user:
         return HttpResponse('BOGUS WOW')
+    action.updated = time.time()
+    action.save()
     deletable = False
     action_url = reverse('add_roll', kwargs=dict(action=action_id))
     if request.method == 'POST':
@@ -630,6 +628,9 @@ def edit_roll(request, **kw):
         return HttpResponse('bogus')
     if roll.action.game.setting.owner != request.user:
         return HttpResponse('NOOOOOPE')
+    action = roll.action
+    action.updated = time.time()
+    action.save()
     action_url = reverse('edit_roll', kwargs=dict(roll=roll_id))
     VisibilityFormSet = modelformset_factory(RollVisibility, form=VisibilityForm, extra=0, can_delete=False)
     players = Players.objects.filter(game=roll.action.game).exclude(user=request.user).all()

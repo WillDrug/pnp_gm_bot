@@ -32,7 +32,7 @@
                                 '<li class="left clearfix"><div class="chat-body clearfix"><div class="header"><strong class="primary-font">'
                                 +value.user
                                 +'</strong><small class="pull-right text-muted"><span class="glyphicon glyphicon-time"></span>'
-                                +$.timeago(value.added)
+                                +$.timeago(value.readable_date)
                                 +'</small></div><p>'
                                 +value.msg
                                 +'</p></div></li>'
@@ -42,7 +42,7 @@
                                 '<li class="left clearfix"><div class="chat-body clearfix"><div class="header"><strong class="primary-font">'
                                 +value.user
                                 +'</strong><small class="pull-right text-muted"><span class="glyphicon glyphicon-time"></span>'
-                                +$.timeago(value.added)
+                                +$.timeago(value.readable_date)
                                 +'</small></div><p>'
                                 +value.msg
                                 +'</p></div></li>'
@@ -76,6 +76,7 @@
                            }
                          });
                     $('#chat_input').val('');
+                    $('#chat_container').scrollTop($('#chat_container')[0].scrollHeight);
                 });
             </script>
         </form>

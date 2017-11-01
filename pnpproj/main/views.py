@@ -210,13 +210,10 @@ def chat(request):
     if update is not None:
         game = get_game(request.user)
         if update == '0':
-            datetime_object = datetime.min
-            datetime_object = datetime_object.replace(tzinfo=timezone.utc)
+            update = 86400
         else:
-            datetime_object = datetime.strptime(update, '%Y-%m-%dT%H:%M:%S.%fZ')
-            datetime_object += timedelta(milliseconds=2)
-            datetime_object = datetime_object.replace(tzinfo=timezone.utc)
-        messages = Chat.objects.filter(game=game).filter(added__gt=datetime_object).order_by('added').all()
+            update = float(update)
+        messages = Chat.objects.filter(game=game).filter(added__gt=update).order_by('added').all()
         return_list = list()
         for msg in messages:
             return_list.append(msg.as_dict)
@@ -225,10 +222,8 @@ def chat(request):
     infinite = request.GET.get('infinite')
     if infinite is not None:
         game = get_game(request.user)
-        datetime_object = datetime.strptime(infinite, '%Y-%m-%dT%H:%M:%S.%fZ')
-        #datetime_object -= timedelta(milliseconds=2)
-        datetime_object = datetime_object.replace(tzinfo=timezone.utc)
-        messages = Chat.objects.filter(game=game).filter(added__lt=datetime_object).order_by('-added').all()[:10]
+        infinite = float(infinite)
+        messages = Chat.objects.filter(game=game).filter(added__lt=infinite).order_by('-added').all()[:10]
         return_list = list()
         for msg in messages:
             return_list.append(msg.as_dict)

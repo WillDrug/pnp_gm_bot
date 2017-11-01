@@ -1,6 +1,6 @@
 {% load extra_tags %}
 {% load static %}
-<div class="inner_action_container {% if muted %}muted {% endif %}{% if hidden %}hidden{% endif %}" added="{{action.added|date:"U.u"}}">
+<div class="inner_action_container {% if muted %}muted {% endif %}{% if hidden %}hidden{% endif %}" added="{{action.added}}">
 <div class="row" style="margin-bottom: -10px;">
     <div class="col-md-2" style="padding-right: 0px; width: fit-content;">
             <div class="act_tooltip" style="margin-left: 10px">{{char}}<div class="act_tooltiptext">{{char_flavour}}</div></div>
