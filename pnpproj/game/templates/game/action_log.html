@@ -80,12 +80,18 @@
                            url: "{% url 'get_actions'  %}?first="+first_date,
                            success: function(data)
                            {
+                               var prevHeight = $('#actions')[0].scrollHeight;
                                $.each(data.new, function(key,val) {
-                                    $.get("{% url 'get_action' %}?action="+val, function(data){
-                                        $('#actions').prepend('<div class="clearfix msg"><div class="col-md-12" id="action'+val+'">'+data+'</div></div>');
-                                    })
+                                    $.ajax({
+                                        url: "{% url 'get_action' %}?action="+val,
+                                        type: "GET",
+                                        async: false,
+                                        success: function(data){
+                                            $('#actions').prepend('<div class="clearfix msg"><div class="col-md-12" id="action'+val+'">'+data+'</div></div>');
+                                        }
+                                    });
                                });
-                               $('#actions').scrollTop(1);
+                               $('#actions').scrollTop($('#actions')[0].scrollHeight-prevHeight);
                            }
                          });
     }
