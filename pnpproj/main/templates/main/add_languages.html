@@ -7,7 +7,9 @@
 <form method="POST" id="setform">
     <div class="row panel">
         <div class="pull-left"><h4>Редактирование Сеттинга</h4></div>
-        <div class="pull-right"><button type="submit" class="save btn btn-success btaddn-default">Сохранить изменения</button></div>
+        <div class="pull-right"><label class="btn btn-danger delete-check">
+				                    <z style="margin-right: 10px">Удалить</z> <input type="checkbox" name="DELETE_ALL">
+		    	                </label><button type="submit" class="save btn btn-success btaddn-default">Сохранить изменения</button></div>
     </div>
     <div class="row">
         <div class="col-md-6">
@@ -64,7 +66,7 @@
 
     <div class="formset col-md-9" style="margin-top: 15px; margin-bottom: 15px">
         {{ groupformset.management_form }}
-        <div class="hidden" id="groups_blank"><div class="panel panel-default">{{ groupformset.empty_form.id }}
+        <div class="hidden" id="groups_blank"><div class="panel panel-default grpsort">
             <div class="panel-heading">
                     <h4 class="panel-title">
                         <a data-toggle="collapse" data-parent="#groups-form-container" href="#collapse{{form.instance.pk}}"><span class="glyphicon glyphicon-file">
@@ -72,6 +74,7 @@
                     </h4>
             </div>
             <div class="row">
+                <div class="hidden grp-position">{{ groupformset.empty_form.position|add_class:"position-input" }}</div>
                 <div class="col-md-8" style="margin-left: 30px">
                     <div class="form-group">
                         <label>
@@ -100,7 +103,7 @@
             </div></div></div>
         <div id="groups-form-container" class="panel-group">
         {% for form in groupformset %}
-        <div class="panel panel-default">
+        <div class="panel panel-default grpsort">
             <div class="panel-heading">
                     <h4 class="panel-title">
                         <a data-toggle="collapse" data-parent="#groups-form-container" href="#collapse{{form.instance.pk}}"><span class="glyphicon glyphicon-file">
@@ -109,7 +112,8 @@
             </div>
             <div id="collapse{{form.instance.pk}}" class="panel-collapse collapse">
                 <div id="group-{{forloop.counter0}}" class="row">
-                    {{ form.id }}
+                    <div class="hidden">{{ form.id }}</div>
+                    <div class="hidden grp-position">{{ form.position|add_class:"position-input" }}</div>
                     <div class="row">
                         <div class="col-md-8" style="margin-left: 30px">
                             <div class="form-group">
@@ -141,59 +145,122 @@
                         <div class="col-md-1"></div>
                     </div>
                 </div>
+                <div id="group-templates-{{forloop.counter0}}" class="clearfix panel panel-warning">
+                {% with templateformsets|keyvalue:form.instance.name as templateset %}
+                    <div class="panel-heading">
+                        <h4 class="panel-title"><a data-toggle="collapse" data-target="#group_parms_{{form.instance.pk}}" aria-expanded="false">Шаблоны параметров</a></h4>
+                    </div>
+                    <div class="panel-body collapse" id="group_parms_{{form.instance.pk}}">
+                            {{ templateset.management_form }}
+
+                            {% for template in templateset %}
+                                <div class="row" style="border-bottom: 1px grey solid;    padding: 10px 0px 10px 50px;">
+                                    {{ template.id }}
+                                    <div class="row">
+                                        <div class="col-md-8">{{ template.name }}</div>
+                                        <div class="col-md-4">{{ template.base_dice }}</div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-md-8">{{ template.flavour|attr:"rows:2" }}</div>
+                                        <div class="col-md-4">{{ template.value }}</div>
+                                    </div><!--
+                                    <div class="clearfix">
+                                        <div class="col-md-4"></div>
+                                        <div class="col-md-8">
+                                            <h4><a data-toggle="collapse" data-target="#affected_{{template.instance.pk}}" aria-expanded="true">Влияния</a></h4>
+                                        </div>
+                                    </div>-->
+                                    <div class="row">
+                                        <div class="col-md-12 collapse" id="affected_{{template.instance.pk}}">
+                                            {% for shit in template.affected_by %}
+                                                <div class="col-md-6">
+                                                    {{ shit }}
+                                                </div>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                    </div>
+                {% endwith %}
+                </div>
             </div>
         </div>
         {% endfor %}
         </div>
+        <script>
+            $(function() {
+                $( "#groups-form-container" ).sortable();
+                $( "#groups-form-container" ).disableSelection();
+
+                $( "#groups-form-container" ).sortable({
+                    stop: function( ) {
+                        var count = 0;
+                        $('#groups-form-container').children().each(function(){
+                            $(this).find(".position-input").attr("value", count);
+                            count += 1;
+                        });
+                    }
+                });
+            });
+        </script>
         <input type="button" class="btn btn-success pull-right" id="plusgroup" value="Добавить">
         <script>
             $('#plusgroup').djangoInlineFormAdd({
                 prefix: "{{ groupformset.prefix }}",
                 containerId: "#groups-form-container",
                 templateId: "#groups_blank",
+                postClick: function() {
+                    var count = 0;
+                        $('#groups-form-container').children().each(function(){
+                            $(this).find(".position-input").attr("value", count);
+                            count += 1;
+                        });
+                }
             });
         </script>
     </div>
         <div class="formset col-md-3" style="margin-top: 15px; margin-bottom: 15px">
-        {{ formset.management_form }}
-        <div class="hidden" id="langs_blank">
-            <li class="langs">
-                {{formset.empty_form.id}}
-                {{formset.empty_form.name}}
-                <label class="btn btn-danger delete-check">
-                {{formset.empty_form.DELETE}}
-		    	</label>
-            </li>
+            {{ formset.management_form }}
+            <div class="hidden" id="langs_blank">
+                <li class="langs">
+                    {{formset.empty_form.id}}
+                    {{formset.empty_form.name}}
+                    <label class="btn btn-danger delete-check">
+                    {{formset.empty_form.DELETE}}
+                    </label>
+                </li>
+            </div>
+            <ul class="tab-pills nav" id="items-form-container">
+            {% for item_form in formset %}
+                <li class="langs" id="item-{{ forloop.counter0 }}">
+                    {{ item_form.id }}
+                    {{ item_form.name }}
+                    <label class="btn btn-danger delete-check">
+                        {{ item_form.DELETE }}
+                    </label>
+                </li>
+            {% endfor %}
+            </ul>
+            <input class="btn btn-success" id="pluslang" value="Добавить">
+            <script>
+                $('.langs input[type=text]').each(function(){
+                    $(this).attr("placeholder", "Название языка");
+                });
+                $('#pluslang').djangoInlineFormAdd({
+                    prefix: "{{ formset.prefix }}",
+                    containerId: "#items-form-container",
+                    templateId: "#langs_blank",
+                });
+            </script>
         </div>
-        <ul class="tab-pills nav" id="items-form-container">
-        {% for item_form in formset %}
-            <li class="langs" id="item-{{ forloop.counter0 }}">
-                {{ item_form.id }}
-                {{ item_form.name }}
-                <label class="btn btn-danger delete-check">
-				    {{ item_form.DELETE }}
-		    	</label>
-            </li>
-        {% endfor %}
-        </ul>
-        <input class="btn btn-success" id="pluslang" value="Добавить">
-        <script>
-            $('.langs input[type=text]').each(function(){
-                $(this).attr("placeholder", "Название языка");
-            });
-            $('#pluslang').djangoInlineFormAdd({
-                prefix: "{{ formset.prefix }}",
-                containerId: "#items-form-container",
-                templateId: "#langs_blank",
-            });
-        </script>
-
-    </div>
 
     <input type="hidden" name="add_lang" value="true"/>
 
 
+
 </div>
+
 </form>
 <script>
     $(function() {

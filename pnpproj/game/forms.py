@@ -4,7 +4,7 @@ import time
 from django.utils import timezone
 from django import forms
 from game.models import Game, Setting, Character, Languages, ParmGroup, Scene, CharParm, Item, InfSet, Status, Action, \
-    Roll, RollVisibility, Influence
+    Roll, RollVisibility, Influence, CharParmTemplate
 
 
 class NewSettingForm(forms.ModelForm):
@@ -140,7 +140,6 @@ class GroupInlineForm(forms.ModelForm):
     name = forms.CharField(widget=forms.TextInput(attrs={'class': 'form-control'}), label='Название')
     flavour = forms.CharField(widget=forms.Textarea(attrs={'class': 'form-control'}), label='Описание')
     base_dice = forms.IntegerField(label='Кубик', initial=100)
-    multiple = forms.IntegerField(label='Множитель', initial=10)
     value = forms.IntegerField(label='Значение', initial=0)
     override_cost = forms.IntegerField(label='Стоимость (-1 = стоимость группы)', initial=-1)
     affected_by = forms.ModelMultipleChoiceField(widget=forms.CheckboxSelectMultiple(), queryset=CharParm.objects.none(), required=False)
@@ -150,6 +149,40 @@ class GroupInlineForm(forms.ModelForm):
         super(GroupInlineForm, self).__init__(*ar, **kw)
         self.fields['affected_by'].queryset = CharParm.objects.filter(character=character).all()
 
+class TemplateInlineForm(forms.ModelForm):
+    class Meta:
+        model = CharParmTemplate
+        fields = ('name', 'flavour', 'base_dice', 'value', 'affected_by')
+
+
+    name = forms.CharField(widget=forms.TextInput(attrs={'class': 'form-control'}), label='Название')
+    flavour = forms.CharField(widget=forms.Textarea(attrs={'class': 'form-control'}), label='Описание')
+    base_dice = forms.IntegerField(label='Кубик', initial=100)
+    value = forms.IntegerField(label='Значение', initial=0)
+    affected_by = forms.ModelMultipleChoiceField(widget=forms.CheckboxSelectMultiple(), queryset=CharParm.objects.none(), required=False)
+
+    def __init__(self, *ar, **kw):
+        setting = kw.pop('setting')
+        super(TemplateInlineForm, self).__init__(*ar, **kw)
+        self.fields['affected_by'].queryset = CharParmTemplate.objects.filter(setting=setting).all()
+
+    def save(self, commit=True):
+        super(TemplateInlineForm, self).save(commit)
+        characters = Character.objects.filter(game__setting=self.instance.setting).all()
+        for character in characters:
+            parm = CharParm.objects.filter(template=self.instance).first()
+            if parm in None:
+                new_parm = CharParm(template=self.instance, character=character, group=self.instance.group, name=self.instance.name,
+                         value=self.instance.value, flavour=self.instance.flavour,
+                         override_cost=-1)
+                new_parm.save()
+            else:
+                parm.group = self.instance.group
+                parm.flavour = self.instance.flavour
+                parm.name = self.instance.name
+                parm.base_dice = self.instance.base_dice
+                parm.affected_by = self.instance.affected_by
+                parm.save()
 
 class SceneForm(forms.ModelForm):
     class Meta:

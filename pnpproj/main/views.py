@@ -9,8 +9,8 @@ from django.contrib.auth.models import User
 from django.contrib.auth.models import AnonymousUser
 from game.views import game_main
 from tools.views import login_view
-from game.models import Character, CharParm, Influence, InfSet, Item, Status, ParmGroup, Players, Setting, Game, Languages
-from game.forms import NewSettingForm, NewGameForm
+from game.models import Character, CharParm, Influence, InfSet, Item, Status, ParmGroup, Players, Setting, Game, Languages, CharParmTemplate
+from game.forms import NewSettingForm, NewGameForm, TemplateInlineForm
 from django.contrib.auth.decorators import login_required
 from django.forms import inlineformset_factory, modelformset_factory
 from django import forms
@@ -115,10 +115,11 @@ def switch_game(request, **kwargs):
 
 
 def add_languages(request): #also edit groups
-    GamesEditFormSet = inlineformset_factory(Setting, Game, fields=('name','flavour'), can_delete=True, extra=0)
+    GamesEditFormSet = inlineformset_factory(Setting, Game, fields=('name', 'flavour'), can_delete=True, extra=0)
     LanguageFormSet = inlineformset_factory(Setting, Languages, fields=('name',), extra=1)
-    ParmGroupFormSetBase = inlineformset_factory(Setting, ParmGroup, fields=('name', 'flavour', 'cost_to_add', 'cost'),
+    ParmGroupFormSetBase = inlineformset_factory(Setting, ParmGroup, fields=('position', 'name', 'flavour', 'cost_to_add', 'cost'),
                                              extra=0)
+    TemplateFormSet = inlineformset_factory(ParmGroup, CharParmTemplate, form=TemplateInlineForm, extra=0)
 
     class ParmGroupFormSet(ParmGroupFormSetBase):
         def add_fields(self, form, index):
@@ -126,22 +127,45 @@ def add_languages(request): #also edit groups
             form.fields["flavour"] = forms.CharField(widget=forms.Textarea(attrs={'class': 'pg_area', 'placeholder': 'Описание', }))
             form.fields["name"] = forms.CharField(widget=forms.TextInput(attrs={'class': 'pg_text', 'placeholder': 'Название', }))
 
+        def get_queryset(self):
+            return super(ParmGroupFormSet, self).get_queryset().order_by('position')
+
     setting_to_edit = Setting.objects.filter(pk=request.GET['setting']).first()
     if setting_to_edit is None:
         return redirect(reverse('game_index'))
     if setting_to_edit.owner != request.user:
         return HttpResponse('fuck you')
     if request.method == 'POST' and request.POST.get('add_lang') == 'true':
+        if request.POST.get('DELETE_ALL') == 'on':
+            setting_to_edit.delete()
+            return redirect(reverse('game_index'))
         base_form = NewSettingForm(request.POST, instance=setting_to_edit, prefix='base_form')
         gamesformset = GamesEditFormSet(request.POST, instance=setting_to_edit, prefix='gamesset')
         formset = LanguageFormSet(request.POST, request.FILES, instance=setting_to_edit, prefix='langs')
+        print(request.POST)
         grpformset = ParmGroupFormSet(request.POST, instance=setting_to_edit, prefix='groups')
+        templateformsets = dict()
+        for grp in grpformset:
+            if grp.instance is not None:
+                templateformsets[grp.instance.name] = TemplateFormSet(request.POST, instance=grp.instance, form_kwargs=dict(setting=setting_to_edit), prefix='temp'+grp.instance.name)
         if formset.is_valid():
             formset.save()
             formset = LanguageFormSet(instance=setting_to_edit, prefix='langs') #reload
         if grpformset.is_valid():
             grpformset.save()
             grpformset = ParmGroupFormSet(instance=setting_to_edit, prefix='groups')
+            for grp in grpformset:
+                try:
+                    if templateformsets[grp.instance.name].is_valid():
+                        templateformsets[grp.instance.name].save()
+                        templateformsets[grp.instance.name] = TemplateFormSet(instance=grp.instance,
+                                                                              form_kwargs=dict(setting=setting_to_edit),
+                                                                              prefix='temp' + grp.instance.name)
+                except KeyError:
+                    templateformsets[grp.instance.name] = TemplateFormSet(instance=grp.instance,
+                                                                          form_kwargs=dict(setting=setting_to_edit),
+                                                                          prefix='temp' + grp.instance.name)
+                    pass
         if base_form.is_valid():
             base_form.save()
         if gamesformset.is_valid():
@@ -151,11 +175,16 @@ def add_languages(request): #also edit groups
         base_form = NewSettingForm(instance=setting_to_edit, prefix='base_form')
         formset = LanguageFormSet(instance=setting_to_edit, prefix='langs')
         grpformset = ParmGroupFormSet(instance=setting_to_edit, prefix='groups')
+        templateformsets = dict()
+        for grp in grpformset:
+            templateformsets[grp.instance.name] = TemplateFormSet(instance=grp.instance, form_kwargs=dict(setting=setting_to_edit), prefix='temp'+grp.instance.name)
+
     return render(request, 'main/add_languages.html', {'formset': formset,
                                                        'groupformset': grpformset,
                                                        'gamesformset': gamesformset,
                                                        'base_form': base_form,
-                                                       'menu': generate_menu(request)})
+                                                       'menu': generate_menu(request),
+                                                       'templateformsets': templateformsets})
 
 @ajax_request
 def rehash(request, **kw):

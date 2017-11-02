@@ -69,3 +69,10 @@ def set_attr(field, attr):
         attrs[attribute] = value
 
     return _process_field_attributes(field, attr, process)
+
+@register.filter
+def keyvalue(dict, key):
+    try:
+        return dict[key]
+    except KeyError:
+        return ''
