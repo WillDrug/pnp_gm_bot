@@ -67,7 +67,7 @@
     <div class="formset col-md-9" style="margin-top: 15px; margin-bottom: 15px">
         {{ groupformset.management_form }}
         <div class="hidden" id="groups_blank"><div class="panel panel-default grpsort">
-            <div class="panel-heading">
+            <div class="panel-heading sortheading">
                     <h4 class="panel-title">
                         <a data-toggle="collapse" data-parent="#groups-form-container" href="#collapse{{form.instance.pk}}"><span class="glyphicon glyphicon-file">
                         </span>Новая Группа</a>
@@ -104,7 +104,7 @@
         <div id="groups-form-container" class="panel-group">
         {% for form in groupformset %}
         <div class="panel panel-default grpsort">
-            <div class="panel-heading">
+            <div class="panel-heading sort-heading">
                     <h4 class="panel-title">
                         <a data-toggle="collapse" data-parent="#groups-form-container" href="#collapse{{form.instance.pk}}"><span class="glyphicon glyphicon-file">
                         </span>{{form.instance.name}}</a>
@@ -146,13 +146,45 @@
                     </div>
                 </div>
                 <div id="group-templates-{{forloop.counter0}}" class="clearfix panel panel-warning">
+                    {{ form.instance.name }}
                 {% with templateformsets|keyvalue:form.instance.name as templateset %}
-                    <div class="panel-heading">
-                        <h4 class="panel-title"><a data-toggle="collapse" data-target="#group_parms_{{form.instance.pk}}" aria-expanded="false">Шаблоны параметров</a></h4>
+                    <div class="panel-heading clearfix">
+                        <div class="col-md-10">
+                            <h4 class="panel-title"><a data-toggle="collapse" data-target="#group_parms_{{form.instance.pk}}" aria-expanded="false">Шаблоны параметров</a></h4>
+                        </div>
+                        <div class="col-md-2">
+                            <button type="button" style="width: 15px; height: 15px;" class="btn btn-success pull-right" id="addTemplate{{form.instance.pk}}"><span class="glyphicon glyphicon-plus" style="height: 10px; width: 10px; position: relative; top: -8px; left: -7px;"></span></button>
+                        </div>
+                    </div>
+                    <div class="hidden" id="template_blank_{{form.instance.pk}}">
+                                <div class="row" style="border-bottom: 1px grey solid;    padding: 10px 0px 10px 50px;">
+                                    <div class="row">
+                                        <div class="col-md-8">{{ templateset.empty_form.name }}</div>
+                                        <div class="col-md-4">{{ templateset.empty_form.base_dice }}</div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-md-8">{{ templateset.empty_form.flavour|attr:"rows:1" }}</div>
+                                        <div class="col-md-4">{{ templateset.empty_form.value }}</div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-md-12">
+                                            {% for shit in templateset.empty_form.affected_by %}
+                                                <div class="col-md-6">
+                                                    {{ shit }}
+                                                </div>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                </div>
                     </div>
                     <div class="panel-body collapse" id="group_parms_{{form.instance.pk}}">
                             {{ templateset.management_form }}
 
+                            <div class="row" style="border-bottom: 1px grey solid;    padding: 10px 0px 10px 50px;">
+                                <div class="col-md-8">Имя\Описание</div>
+                                <div class="col-md-4">Кубик\Стартовый бонус</div>
+                            </div>
+                            {{templateset.errors}}
                             {% for template in templateset %}
                                 <div class="row" style="border-bottom: 1px grey solid;    padding: 10px 0px 10px 50px;">
                                     {{ template.id }}
@@ -161,15 +193,19 @@
                                         <div class="col-md-4">{{ template.base_dice }}</div>
                                     </div>
                                     <div class="row">
-                                        <div class="col-md-8">{{ template.flavour|attr:"rows:2" }}</div>
+                                        <div class="col-md-8">{{ template.flavour|attr:"rows:1" }}</div>
                                         <div class="col-md-4">{{ template.value }}</div>
-                                    </div><!--
+                                    </div>
                                     <div class="clearfix">
-                                        <div class="col-md-4"></div>
+                                        <div class="col-md-4">
+                                            <label class="btn btn-danger delete-check">
+                                                <z style="margin-right: 10px">Удалить</z> {{ template.DELETE }}
+                                            </label>
+                                        </div>
                                         <div class="col-md-8">
                                             <h4><a data-toggle="collapse" data-target="#affected_{{template.instance.pk}}" aria-expanded="true">Влияния</a></h4>
                                         </div>
-                                    </div>-->
+                                    </div>
                                     <div class="row">
                                         <div class="col-md-12 collapse" id="affected_{{template.instance.pk}}">
                                             {% for shit in template.affected_by %}
@@ -182,6 +218,13 @@
                                 </div>
                             {% endfor %}
                     </div>
+                    <script>
+                        $('#addTemplate{{form.instance.pk}}').djangoInlineFormAdd({
+                            prefix: "{{ templateset.prefix }}",
+                            containerId: "#group_parms_{{form.instance.pk}}",
+                            templateId: "#template_blank_{{form.instance.pk}}",
+                        });
+                    </script>
                 {% endwith %}
                 </div>
             </div>
@@ -190,7 +233,7 @@
         </div>
         <script>
             $(function() {
-                $( "#groups-form-container" ).sortable();
+                $( "#groups-form-container" ).sortable({ handle: ".sort-heading" });
                 $( "#groups-form-container" ).disableSelection();
 
                 $( "#groups-form-container" ).sortable({

@@ -572,6 +572,6 @@ def populate_parms(sender, instance, created, *args, **kwargs):
                 parm.save()
         parms = CharParm.objects.filter(character=instance).all()
         for parm in parms:
-            for aff in parm.template.affected_by:
+            for aff in parm.template.affected_by.all():
                 parm.affected_by.add(aff)
             parm.save()

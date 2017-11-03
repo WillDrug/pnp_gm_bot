@@ -142,7 +142,6 @@ def add_languages(request): #also edit groups
         base_form = NewSettingForm(request.POST, instance=setting_to_edit, prefix='base_form')
         gamesformset = GamesEditFormSet(request.POST, instance=setting_to_edit, prefix='gamesset')
         formset = LanguageFormSet(request.POST, request.FILES, instance=setting_to_edit, prefix='langs')
-        print(request.POST)
         grpformset = ParmGroupFormSet(request.POST, instance=setting_to_edit, prefix='groups')
         templateformsets = dict()
         for grp in grpformset:
@@ -178,6 +177,7 @@ def add_languages(request): #also edit groups
         templateformsets = dict()
         for grp in grpformset:
             templateformsets[grp.instance.name] = TemplateFormSet(instance=grp.instance, form_kwargs=dict(setting=setting_to_edit), prefix='temp'+grp.instance.name)
+        print(templateformsets)
 
     return render(request, 'main/add_languages.html', {'formset': formset,
                                                        'groupformset': grpformset,
