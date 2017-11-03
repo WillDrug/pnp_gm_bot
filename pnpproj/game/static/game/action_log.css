@@ -15,10 +15,9 @@
     text-align: center;
     border-radius: 6px;
     padding: 5px 0;
-
     /* Position the tooltip */
     position: absolute;
-    left: 50px;
+    left: 10px;
     width: 200px;
     z-index: 3;
 }
