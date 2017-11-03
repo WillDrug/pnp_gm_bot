@@ -61,8 +61,10 @@
                     contentType: "application/json; charset=utf-8",
                     success: function(data) {
                         update_chat(data);
-                        $('#chat_list').attr("last", data[0].added)
-                        $('#chat_list').attr("first", data[data.length-1].added)
+                        if (data.length>0) {
+                            $('#chat_list').attr("last", data[0].added)
+                            $('#chat_list').attr("first", data[data.length-1].added)
+                        }
                     }
                 });
                 $('#chat_form').submit(function(e){

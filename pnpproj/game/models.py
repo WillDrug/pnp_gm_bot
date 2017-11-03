@@ -104,6 +104,7 @@ class CharParmTemplate(models.Model):
     base_dice = models.IntegerField(default=100)
     name = models.CharField(max_length=50)
     flavour = models.CharField(max_length=2000)
+    multiple = models.FloatField(default=10)
     value = models.IntegerField()  # initial value
     affected_by = models.ManyToManyField('self', symmetrical=False)
 
@@ -118,6 +119,7 @@ class CharParm(models.Model):
     name = models.CharField(max_length=50)
     flavour = models.CharField(max_length=2000)
     value = models.IntegerField()
+    multiple = models.FloatField(default=10)
     override_cost = models.IntegerField(default=-1)
     affected_by = models.ManyToManyField('self', symmetrical=False)
 
@@ -157,8 +159,6 @@ class CharParm(models.Model):
             textlist[inf.affects.name] = inf.value
         return textlist
 
-    def roll(self):
-        return 0  # to fix. rolls shit.
 
     @classmethod
     def from_db(cls, db, field_names, values):
@@ -342,7 +342,7 @@ class Roll(models.Model):
         if char is not None:
             self.character = char
         self.dice_roll = self.roll()
-        self.parm_bonus = 0 if self.parm is None else self.parm.roll_bonus()
+        self.parm_bonus = 0 if self.parm is None else self.parm.roll_bonus()*self.parm.multiple
         self.action = action
 
     def roll(self, exploding=False):
@@ -568,10 +568,30 @@ def populate_parms(sender, instance, created, *args, **kwargs):
             for template in templates:
                 parm = CharParm(template=template, character=instance, group=group, name=template.name,
                                 value=template.value, flavour=template.flavour,
-                                override_cost=-1)
+                                override_cost=-1, multiple=template.multiple)
                 parm.save()
         parms = CharParm.objects.filter(character=instance).all()
         for parm in parms:
             for aff in parm.template.affected_by.all():
-                parm.affected_by.add(aff)
+                reaff = CharParm.objects.filter(character=instance).filter(template=aff).first()
+                if reaff is not None:
+                    parm.affected_by.add(reaff)
+            parm.save()
+@receiver(post_save, sender=CharParmTemplate)
+def rebase_parms(sender, instance, created, *args, **kwargs):
+    characters = Character.objects.filter(game__setting=instance.setting).all()
+    for character in characters:
+        parm = CharParm.objects.filter(template=instance).first()
+        if parm in None:
+            new_parm = CharParm(template=instance, character=character, group=instance.group,
+                                name=instance.name,
+                                value=instance.value, flavour=instance.flavour,
+                                override_cost=-1)
+            new_parm.save()
+        else:
+            parm.group = instance.group
+            parm.flavour = instance.flavour
+            parm.name = self.instance.name
+            parm.base_dice = self.instance.base_dice
+            parm.affected_by = self.instance.affected_by
             parm.save()

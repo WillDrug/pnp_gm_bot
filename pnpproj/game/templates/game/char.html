@@ -56,15 +56,6 @@
             <div class="panel-heading">
                 <div class="panel-title">
                     <span id='folder_{{ group.charparm_formset.prefix }}' class="glyphicon glyphicon-triangle-right" style="padding-right: 10px" data-toggle="collapse" data-target="#formset_container_{{ group.charparm_formset.prefix }}" aria-expanded="true"></span>
-                    <script>
-                        $('#formset_container_{{ group.charparm_formset.prefix }}').on('shown.bs.collapse', function () {
-                           $("#folder_{{ group.charparm_formset.prefix }}").removeClass("glyphicon-triangle-right").addClass("glyphicon-triangle-bottom");
-                        });
-
-                        $('#formset_container_{{ group.charparm_formset.prefix }}').on('hidden.bs.collapse', function () {
-                           $("#folder_{{ group.charparm_formset.prefix }}").removeClass("glyphicon-triangle-bottom").addClass("glyphicon-triangle-right");
-                        });
-                    </script>
                     <a href='#' id="group{{group.group.pk}}">{{ group.group.name }}</a>
                     <div class="pull-right cp_tooltip"><span class="glyphicon glyphicon-question-sign"></span><div class="cp_tooltiptext">{{ group.group.flavour }}</div></div>
                    {% if parms.gm %}
@@ -160,6 +151,15 @@
 
         </div>
     </div>
+    <script>
+                        $('#formset_container_{{ group.charparm_formset.prefix }}').on('shown.bs.collapse', function () {
+                           $("#folder_{{ group.charparm_formset.prefix }}").removeClass("glyphicon-triangle-right").addClass("glyphicon-triangle-bottom");
+                        });
+
+                        $('#formset_container_{{ group.charparm_formset.prefix }}').on('hidden.bs.collapse', function () {
+                           $("#folder_{{ group.charparm_formset.prefix }}").removeClass("glyphicon-triangle-bottom").addClass("glyphicon-triangle-right");
+                        });
+                    </script>
 {% endfor %}
 
 {% if parms.gm %}

@@ -146,7 +146,6 @@
                     </div>
                 </div>
                 <div id="group-templates-{{forloop.counter0}}" class="clearfix panel panel-warning">
-                    {{ form.instance.name }}
                 {% with templateformsets|keyvalue:form.instance.name as templateset %}
                     <div class="panel-heading clearfix">
                         <div class="col-md-10">
@@ -156,15 +155,25 @@
                             <button type="button" style="width: 15px; height: 15px;" class="btn btn-success pull-right" id="addTemplate{{form.instance.pk}}"><span class="glyphicon glyphicon-plus" style="height: 10px; width: 10px; position: relative; top: -8px; left: -7px;"></span></button>
                         </div>
                     </div>
+                    {{ templateset.management_form }}
                     <div class="hidden" id="template_blank_{{form.instance.pk}}">
                                 <div class="row" style="border-bottom: 1px grey solid;    padding: 10px 0px 10px 50px;">
+                                    {{ templateset.empty_form.setting }}
+                                    <div class="row">
+                                        <div class="'col-md-8">
+                                            Название\Описание
+                                        </div>
+                                        <div class="'col-md-4">
+                                            Куб, Стартовый бонус\Множитель
+                                        </div>
+                                    </div>
                                     <div class="row">
                                         <div class="col-md-8">{{ templateset.empty_form.name }}</div>
-                                        <div class="col-md-4">{{ templateset.empty_form.base_dice }}</div>
+                                        <div class="col-md-4">{{ templateset.empty_form.base_dice|attr:"style:width:50%" }}{{ templateset.empty_form.value|attr:"style:width:50%" }}</div>
                                     </div>
                                     <div class="row">
                                         <div class="col-md-8">{{ templateset.empty_form.flavour|attr:"rows:1" }}</div>
-                                        <div class="col-md-4">{{ templateset.empty_form.value }}</div>
+                                        <div class="col-md-4">{{ templateset.empty_form.multiple}}</div>
                                     </div>
                                     <div class="row">
                                         <div class="col-md-12">
@@ -177,24 +186,29 @@
                                     </div>
                                 </div>
                     </div>
+                            {% if templateset.errors %}
+                                {{templateset.errors}}
+                            {% endif %}
                     <div class="panel-body collapse" id="group_parms_{{form.instance.pk}}">
-                            {{ templateset.management_form }}
-
-                            <div class="row" style="border-bottom: 1px grey solid;    padding: 10px 0px 10px 50px;">
-                                <div class="col-md-8">Имя\Описание</div>
-                                <div class="col-md-4">Кубик\Стартовый бонус</div>
-                            </div>
-                            {{templateset.errors}}
                             {% for template in templateset %}
                                 <div class="row" style="border-bottom: 1px grey solid;    padding: 10px 0px 10px 50px;">
                                     {{ template.id }}
+                                    {{ template.setting }}
                                     <div class="row">
-                                        <div class="col-md-8">{{ template.name }}</div>
-                                        <div class="col-md-4">{{ template.base_dice }}</div>
+                                        <div class="'col-md-8">
+                                            Название\Описание
+                                        </div>
+                                        <div class="'col-md-4">
+                                            Куб, Стартовый бонус\Множитель
+                                        </div>
                                     </div>
                                     <div class="row">
-                                        <div class="col-md-8">{{ template.flavour|attr:"rows:1" }}</div>
-                                        <div class="col-md-4">{{ template.value }}</div>
+                                        <div class="col-md-8">{{ template.name|attr:"placeholder:Название" }}</div>
+                                        <div class="col-md-4">{{ template.base_dice|attr:"style:width:50%" }}{{ template.value|attr:"style:width:50%" }}</div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-md-8">{{ template.flavour|attr:"rows:1"|attr:"placeholder:Название" }}</div>
+                                        <div class="col-md-4">{{ template.multiple}}</div>
                                     </div>
                                     <div class="clearfix">
                                         <div class="col-md-4">

@@ -124,7 +124,7 @@ def char_edit(request, **kw):
     else:
         parms['parms']['gm'] = False
     # populate formsets for each group (with link to add if need be)
-    groups = ParmGroup.objects.filter(setting=char.game.setting).all()
+    groups = ParmGroup.objects.filter(setting=char.game.setting).order_by('position').all()
     ParmFormSet = inlineformset_factory(Character, CharParm, fields=('name', 'flavour', 'value'), extra=0)
 
     for group in groups:

@@ -119,7 +119,7 @@ def add_languages(request): #also edit groups
     LanguageFormSet = inlineformset_factory(Setting, Languages, fields=('name',), extra=1)
     ParmGroupFormSetBase = inlineformset_factory(Setting, ParmGroup, fields=('position', 'name', 'flavour', 'cost_to_add', 'cost'),
                                              extra=0)
-    TemplateFormSet = inlineformset_factory(ParmGroup, CharParmTemplate, form=TemplateInlineForm, extra=0)
+    TemplateFormSetBase = inlineformset_factory(ParmGroup, CharParmTemplate, form=TemplateInlineForm, extra=0)
 
     class ParmGroupFormSet(ParmGroupFormSetBase):
         def add_fields(self, form, index):
@@ -129,6 +129,10 @@ def add_languages(request): #also edit groups
 
         def get_queryset(self):
             return super(ParmGroupFormSet, self).get_queryset().order_by('position')
+
+    class TemplateFormSet(TemplateFormSetBase):
+        pass
+
 
     setting_to_edit = Setting.objects.filter(pk=request.GET['setting']).first()
     if setting_to_edit is None:
@@ -146,7 +150,9 @@ def add_languages(request): #also edit groups
         templateformsets = dict()
         for grp in grpformset:
             if grp.instance is not None:
-                templateformsets[grp.instance.name] = TemplateFormSet(request.POST, instance=grp.instance, form_kwargs=dict(setting=setting_to_edit), prefix='temp'+grp.instance.name)
+                templateformsets[grp.instance.name] = TemplateFormSet(request.POST, instance=grp.instance,
+                                                                      form_kwargs=dict(setting=setting_to_edit),
+                                                                      prefix='temp'+grp.instance.name)
         if formset.is_valid():
             formset.save()
             formset = LanguageFormSet(instance=setting_to_edit, prefix='langs') #reload
@@ -177,7 +183,6 @@ def add_languages(request): #also edit groups
         templateformsets = dict()
         for grp in grpformset:
             templateformsets[grp.instance.name] = TemplateFormSet(instance=grp.instance, form_kwargs=dict(setting=setting_to_edit), prefix='temp'+grp.instance.name)
-        print(templateformsets)
 
     return render(request, 'main/add_languages.html', {'formset': formset,
                                                        'groupformset': grpformset,
