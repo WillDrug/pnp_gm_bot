@@ -270,6 +270,7 @@ def group_edit(request, **kw):
                 parm.save()
             for deleted in formset.deleted_objects:
                 deleted.delete()
+            formset.save()
         else:
             errors.append(formset.errors)
         if errors.__len__() == 0:

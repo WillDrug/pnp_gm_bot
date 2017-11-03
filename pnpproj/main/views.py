@@ -162,7 +162,12 @@ def add_languages(request): #also edit groups
             for grp in grpformset:
                 try:
                     if templateformsets[grp.instance.name].is_valid():
-                        templateformsets[grp.instance.name].save()
+                        instances = templateformsets[grp.instance.name].save(commit=False)
+                        for instance in instances:
+                            instance.save()
+                        templateformsets[grp.instance.name].save_m2m()
+                        for to_del in templateformsets[grp.instance.name].deleted_objects:
+                            to_del.delete()
                         templateformsets[grp.instance.name] = TemplateFormSet(instance=grp.instance,
                                                                               form_kwargs=dict(setting=setting_to_edit),
                                                                               prefix='temp' + grp.instance.name)

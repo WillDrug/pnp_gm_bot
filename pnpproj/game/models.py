@@ -4,7 +4,7 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from django.dispatch import receiver
-from django.db.models.signals import post_save
+from django.db.models.signals import post_save, m2m_changed
 import re
 from barnum import gen_data
 import random
@@ -412,29 +412,29 @@ def populate_groups(sender, instance, created, *args, **kwargs):
                         flavour='Базовые возможности персонажа', position=0)
         grp.save()
 
-        strength = CharParmTemplate(setting=instance, group=grp, name='Сила', value=1,
+        strength = CharParmTemplate(setting=instance, group=grp, name='Сила', value=5, multiple=2,
                                     flavour='Физическая сила персонажа -- я могу поднять помидор.')
         strength.save()
-        constitution = CharParmTemplate(setting=instance, group=grp, name='Выносливость', value=1,
+        constitution = CharParmTemplate(setting=instance, group=grp, name='Выносливость', value=5, multiple=2,
                                         flavour='Выносливость персонажа -- я могу съесть тухлый помидор')
         constitution.save()
-        dexterity = CharParmTemplate(setting=instance, group=grp, name='Ловкость', value=1,
+        dexterity = CharParmTemplate(setting=instance, group=grp, name='Ловкость', value=5, multiple=2,
                                      flavour='Ловкость персонажа -- я могу кинуть помидор')
         dexterity.save()
-        agility = CharParmTemplate(setting=instance, group=grp, name='Скорость', value=1,
+        agility = CharParmTemplate(setting=instance, group=grp, name='Скорость', value=5, multiple=2,
                                    flavour='Скорость персонажа -- я могу догнать помидор')
         agility.save()
-        intelligence = CharParmTemplate(setting=instance, group=grp, name='Интеллект', value=1,
+        intelligence = CharParmTemplate(setting=instance, group=grp, name='Интеллект', value=5, multiple=2,
                                         flavour='Интеллект персонажа -- я знаю что помидор фрукт')
         intelligence.save()
-        perception = CharParmTemplate(setting=instance, group=grp, name='Внимание', value=1,
+        perception = CharParmTemplate(setting=instance, group=grp, name='Внимание', value=5, multiple=2,
                                       flavour='Внимание персонажа -- я могу следить за тремя помидорами')
         perception.save()
-        power = CharParmTemplate(setting=instance, group=grp, name='Харизма', value=1,
+        power = CharParmTemplate(setting=instance, group=grp, name='Харизма', value=5, multiple=2,
                                  flavour='Сила Духа персонажа -- я могу заколдовать или продать '
                                          'фруктовый салат с помидором')
         power.save()
-        willpower = CharParmTemplate(setting=instance, group=grp, name='Воля', value=1,
+        willpower = CharParmTemplate(setting=instance, group=grp, name='Воля', value=5, multiple=2,
                                      flavour='Сила Воли персонажа -- я могу устоять от того чтобы делать '
                                              'фруктовый салат с помидором')
         willpower.save()
@@ -448,7 +448,7 @@ def populate_groups(sender, instance, created, *args, **kwargs):
         initiative.affected_by.add(dexterity)
         initiative.affected_by.add(agility)
         initiative.save()
-        health = CharParmTemplate(setting=instance, group=grp, name='Здоровье', value=1,
+        health = CharParmTemplate(setting=instance, group=grp, name='Здоровье', value=5,
                                   flavour='Здоровье персонажа. Персонаж не имеет проблем пока успешно прокидывает '
                                           'сложность здоровья. Прокачивать здоровье проще, чем выносливость')
         health.save()
@@ -582,16 +582,45 @@ def rebase_parms(sender, instance, created, *args, **kwargs):
     characters = Character.objects.filter(game__setting=instance.setting).all()
     for character in characters:
         parm = CharParm.objects.filter(template=instance).first()
-        if parm in None:
+        if parm is None:
             new_parm = CharParm(template=instance, character=character, group=instance.group,
-                                name=instance.name,
+                                name=instance.name, multiple=instance.multiple,
                                 value=instance.value, flavour=instance.flavour,
                                 override_cost=-1)
             new_parm.save()
+            for aff in instance.affected_by.all():
+                reparm = CharParm.objects.filter(character=character).filter(template=aff).first()
+                if reparm is not None:
+                    new_parm.affected_by.add(reparm)
+            new_parm.save()
         else:
-            parm.group = instance.group
             parm.flavour = instance.flavour
-            parm.name = self.instance.name
-            parm.base_dice = self.instance.base_dice
-            parm.affected_by = self.instance.affected_by
+            parm.name = instance.name
+            parm.base_dice = instance.base_dice
+            parm.multiple = instance.multiple
+            for aff in instance.affected_by.all():
+                reaff = CharParm.objects.filter(character=character).filter(template=aff).first()
+                if reaff is not None and reaff not in parm.affected_by.all():
+                    parm.affected_by.add(reaff)
+            for aff in parm.affected_by.all():
+                reaff = CharParmTemplate.objects.filter(pk=aff.template.pk).first()
+                if reaff is not None and reaff not in instance.affected_by.all():
+                    parm.affected_by.remove(aff)
+            parm.save()
+
+@receiver(m2m_changed, sender=CharParmTemplate.affected_by.through)
+def rebase_parm_m2m(sender, instance, *args, **kwargs):
+    characters = Character.objects.filter(game__setting=instance.setting).all()
+    print(characters)
+    for character in characters:
+        parm = CharParm.objects.filter(template=instance).first()
+        if parm is not None:
+            for aff in instance.affected_by.all():
+                reaff = CharParm.objects.filter(character=character).filter(template=aff).first()
+                if reaff is not None and reaff not in parm.affected_by.all():
+                    parm.affected_by.add(reaff)
+            for aff in parm.affected_by.all():
+                reaff = CharParmTemplate.objects.filter(pk=aff.template.pk).first()
+                if reaff is not None and reaff not in instance.affected_by.all():
+                    parm.affected_by.remove(aff)
             parm.save()
