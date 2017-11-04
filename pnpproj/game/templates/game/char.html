@@ -25,14 +25,14 @@
     </div>
 {% endif %}
 <div class="row media-body">
-        <div class="col-md-7">
+        <div class="col-md-8">
             <h4 class="media-heading"><a href='#' id="edit_char">{{ parms.character.name }}</a></h4>
         </div>
         <div class="col-md-3 label label-info">
             <span id="exp">{{ parms.character.experience }}</span> EXP
         </div>
-    <div class="col-md-2">
-            <a id='refresh_char' class="glyphicon glyphicon-refresh" style="color:green;"></a>
+    <div class="col-md-1" style="padding: 0px;">
+            <a id='refresh_char' class="glyphicon glyphicon-refresh" style="color:green; padding-left: 5px;"></a>
             <script>
                 $('#refresh_char').on("click", function(){
                     $('#char_container').parent().load("{% url 'char_edit' parms.character.pk %}");
@@ -129,15 +129,15 @@
                     <div class="col-md-1">{{ form.value }}</div>
                     {% define form.instance.affected_string.items as affects %}
                     {% if affects|length == 0 %}
-                    <div class="col-md-1"> {{ form.instance.true_value }}</div>
+                    <div class="col-md-1"> {% if form.instance.true_value > 0 %}+{% endif %}{{ form.instance.true_value }}</div>
                     {% else %}
-                        <div class="cp_tooltip col-md-1">{{ form.instance.true_value }}<div class="cp_tooltiptext">
+                        <div class="cp_tooltip col-md-1">{% if form.instance.true_value > 0 %}+{% endif %}{{ form.instance.true_value }}<div class="cp_tooltiptext">
                         {% for fr, to in form.instance.affected_string.items %}
-                            <p>{{ fr }}: +{{ to }}</p>
+                            <p>{{ fr }}: {% if to > 0 %}+{%endif%}{{ to }}</p>
                         {% endfor %}
                         </div></div>
                         {% endif %}
-                        {% if can_do %}
+                        {% if can_do and cost > -1 %}
                             <div class="char_buttons col-md-3">
                                 <span type="button" anc="{{form.id.initial}}" class="btn btn-danger btn-number btnminus glyphicon glyphicon-minus"  disabled>
                                 </span>
@@ -442,15 +442,6 @@
         <div class="panel-heading">
                 <div class="panel-title">
                     <span id='folder_statuses' class="glyphicon glyphicon-triangle-right" style="padding-right: 10px" data-toggle="collapse" data-target="#statuses" aria-expanded="true"></span>
-                     <script>
-                    $('#statuses').on('shown.bs.collapse', function () {
-                       $("#folder_statuses").removeClass("glyphicon-triangle-right").addClass("glyphicon-triangle-bottom");
-                    });
-
-                    $('#statuses').on('hidden.bs.collapse', function () {
-                       $("#folder_statuses").removeClass("glyphicon-triangle-bottom").addClass("glyphicon-triangle-right");
-                    });
-                    </script>
                     <span>Статусы</span>
                     <div class="pull-right cp_tooltip"><span class="glyphicon glyphicon-question-sign"></span><div class="cp_tooltiptext">Статусы влияют на игрока определенное кол-во ходов. <br>Если вы не видите на что влияет статус - изменение не отобразится в ваших параметрах</div></div>
                 </div>
@@ -473,6 +464,15 @@
         </div>
         {% endfor %}
         </div>
+        <script>
+            $('#statuses').on('shown.bs.collapse', function () {
+               $("#folder_statuses").removeClass("glyphicon-triangle-right").addClass("glyphicon-triangle-bottom");
+            });
+
+            $('#statuses').on('hidden.bs.collapse', function () {
+               $("#folder_statuses").removeClass("glyphicon-triangle-bottom").addClass("glyphicon-triangle-right");
+            });
+        </script>
     </div>
 {% endif %}
 

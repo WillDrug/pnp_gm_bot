@@ -66,7 +66,7 @@
             <div class="col-md-12">
                 <a class="pull-left" style="padding-right: 10px;" id="edit{{roll.key}}"><img src="{% static 'tools/images/dice_25.png' %}"></a>
                 {{ roll.char }}({{ roll.parm }}):
-                <span class="act_tooltip">{{ roll.parms.dice_roll }}<span class="act_tooltiptext">1d{{ roll.parms.base_dice }}</span></span>
+                <span class="act_tooltip">{{ roll.parms.dice_roll }}<span class="act_tooltiptext">{{ roll.parms.base_dice }}</span></span>
                 + {{ roll.parms.bonus }}
                 =
                 {{ roll.parms.cool_sum }}

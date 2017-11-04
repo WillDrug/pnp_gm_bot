@@ -6,13 +6,17 @@
     <form method="POST" id="modal_form" action="{{ action_url }}">
         {% csrf_token %}
         {{ rollform.id }}
-         <div class="row">
+            <div class="row">
                 <div class="col-md-6">Параметр для броска</div>
-                <div class="col-md-6">Имя параметра<div class="act_tooltip pull-right"><span class="pull-right glyphicon glyphicon-question-sign"></span><div class="act_tooltiptext"><small>Требуется при пустом поле "параметр". Если поле пустое туда подставится название выбранного параметра.</small></div></div></div>
+                <div class="col-md-6">{{ rollform.parm|add_class:"form-control" }}</div>
             </div>
             <div class="row">
-                <div class="col-md-6">{{ rollform.parm|add_class:"form-control" }}</div>
+                <div class="col-md-6">Имя параметра<div class="act_tooltip pull-right"><span class="pull-right glyphicon glyphicon-question-sign"></span><div class="act_tooltiptext"><small>Требуется при пустом поле "параметр". Если поле пустое туда подставится название выбранного параметра.</small></div></div></div>
+                <div class="col-md-6">Формула кубика<small> (Перезатирают то что в параметре)</small></div>
+            </div>
+            <div class="row">
                 <div class="col-md-6">{{ rollform.parm_name }}</div>
+                <div class="col-md-6">{{ rollform.base_dice }}</div>
             </div>
             <div class="row">
                 <div class="col-md-6">Ситуационный бонус</div>

@@ -139,10 +139,13 @@ def char_edit(request, **kw):
                     i.save()
                 for i in formset_to_save.deleted_objects:
                     i.delete()
-
-        group_dict['charparm_formset'] = ParmFormSet(queryset=CharParm.objects.filter(group=group).all(),
-                                                     instance=char, prefix=group.name)
-
+                group_dict['charparm_formset'] = ParmFormSet(queryset=CharParm.objects.filter(group=group).all(),
+                                                             instance=char, prefix=group.name)
+            else:
+                group_dict['charparm_formset'] = formset_to_save
+        else:
+            group_dict['charparm_formset'] = ParmFormSet(queryset=CharParm.objects.filter(group=group).all(),
+                                                         instance=char, prefix=group.name)
         parms['parms']['groups'].append(group_dict)
     if parms['parms']['gm']:
         ItemFormSet = inlineformset_factory(Character, Item, form=ItemForm, extra=0)
@@ -610,6 +613,22 @@ def add_roll(request, **kw):
                         visibility.roll = roll
                         visibility.save()
                         return dict(reload=True, id='action'+str(action.pk), url=reverse('get_action')+'?action='+str(action.pk))
+            else:
+                players = Players.objects.filter(game=get_game(request.user)).exclude(
+                    user=get_game(request.user).setting.owner).all()
+                visibility_forms = list()
+                for player in players:
+                    visibility_forms.append(VisibilityForm(player=player, prefix=str(player.pk)))
+                title = 'Добавление Броска'
+                return render(request, 'game/roll_modal.html', dict(
+                    form=form,
+                    visforms=visibility_forms,
+                    step=False,
+                    char=char,
+                    action_url=action_url,
+                    title=title,
+                    deletable=deletable
+                ))
     else:
         form = CharChooseForm(action=action)
         title = 'Выберите Персонажа'
@@ -649,10 +668,10 @@ def edit_roll(request, **kw):
             ok = True
             roll_form = RollForm(request.POST, instance=roll, char=roll.character, prefix='roll')
             if roll_form.is_valid():
-                roll = roll_form.save(commit=False)
-
-                roll.make_roll(roll.action)
-                roll.save()
+                if roll_form.changed_data.__len__() > 0:
+                    roll = roll_form.save(commit=False)
+                    roll.make_roll(roll.action)
+                    roll.save()
             else:
                 ok = False
             visibility = VisibilityFormSet(request.POST, queryset=RollVisibility.objects.filter(roll=roll), prefix='vis')

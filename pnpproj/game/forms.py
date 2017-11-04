@@ -119,12 +119,14 @@ class InfSetForm(forms.ModelForm):
 class ParmGroupForm(forms.ModelForm):
     class Meta:
         model = ParmGroup
-        fields = ('name', 'flavour', 'cost_to_add', 'cost')
+        fields = ('name', 'flavour', 'cost_to_add', 'cost', 'base_dice', 'multiple')
 
     name = forms.CharField(widget=forms.TextInput(attrs={'class': 'form-control'}), label='Название группы')
     flavour = forms.CharField(widget=forms.Textarea(attrs={'class': 'form-control'}), label='Описание группы')
     cost_to_add = forms.IntegerField(label='Стоимость добавления нового')
     cost = forms.IntegerField(label='Стоимость поднятия навыка')
+    base_dice = forms.CharField(label='Формула кубов', required=True, widget=forms.TextInput(attrs={'class': 'form-control'}))
+    multiple = forms.IntegerField(label='Множитель', required=True, initial=10)
 
     def is_valid(self, *ar, **kw):
         setting = kw.pop('setting')
@@ -139,10 +141,10 @@ class GroupInlineForm(forms.ModelForm):
 
     name = forms.CharField(widget=forms.TextInput(attrs={'class': 'form-control'}), label='Название')
     flavour = forms.CharField(widget=forms.Textarea(attrs={'class': 'form-control'}), label='Описание')
-    base_dice = forms.IntegerField(label='Кубик', initial=100)
+    base_dice = forms.CharField(widget=forms.TextInput(attrs={'class': 'form-control'}), label='Формула кубов', initial='1d100', required=False)
     value = forms.IntegerField(label='Значение', initial=0)
     override_cost = forms.IntegerField(label='Стоимость (-1 = стоимость группы)', initial=-1)
-    multiple = forms.FloatField(label='Множитель', initial=10)
+    multiple = forms.FloatField(label='Множитель', initial=-1, required=False)
     affected_by = forms.ModelMultipleChoiceField(widget=forms.CheckboxSelectMultiple(), queryset=CharParm.objects.none(), required=False)
 
     def __init__(self, *ar, **kw):
@@ -153,15 +155,16 @@ class GroupInlineForm(forms.ModelForm):
 class TemplateInlineForm(forms.ModelForm):
     class Meta:
         model = CharParmTemplate
-        fields = ('setting', 'name', 'flavour', 'base_dice', 'value', 'affected_by', 'multiple')
+        fields = ('setting', 'name', 'flavour', 'cost', 'base_dice', 'value', 'affected_by', 'multiple')
 
     setting = forms.ModelChoiceField(widget=forms.HiddenInput(), queryset=Setting.objects.none())
     name = forms.CharField(widget=forms.TextInput(attrs={'class': 'form-control'}), label='Название')
     flavour = forms.CharField(widget=forms.Textarea(attrs={'class': 'form-control'}), label='Описание')
-    base_dice = forms.IntegerField(label='Кубик', initial=100)
+    base_dice = forms.CharField(widget=forms.TextInput(attrs={'class': 'form-control'}), label='Формула кубов', required=False)
     value = forms.IntegerField(label='Значение', initial=0)
-    multiple = forms.FloatField(label='Множитель', initial=10)
+    multiple = forms.FloatField(label='Множитель', initial=-1, required=False)
     affected_by = forms.ModelMultipleChoiceField(widget=forms.CheckboxSelectMultiple(), queryset=CharParm.objects.none(), required=False)
+    cost = forms.IntegerField(label='Стоимость', initial=-1, required=True)
 
     def __init__(self, *ar, **kw):
         setting = kw.pop('setting')
@@ -282,12 +285,13 @@ class VisibilityForm(forms.ModelForm):
 class RollForm(forms.ModelForm):
     class Meta:
         model = Roll
-        fields = ('parm', 'parm_name', 'free_bonus', 'difficulty')
+        fields = ('parm', 'parm_name', 'base_dice', 'free_bonus', 'difficulty')
 
     parm = forms.ModelChoiceField(queryset=CharParm.objects.none(), required=False)
     parm_name = forms.CharField(widget=forms.TextInput(attrs={'class': 'form-control'}), required=False)
     free_bonus = forms.IntegerField(widget=forms.NumberInput(attrs={'class': 'form-control'}), initial=0)
     difficulty = forms.IntegerField(widget=forms.NumberInput(attrs={'class': 'form-control'}), initial=0)
+    base_dice = forms.CharField(widget=forms.TextInput(attrs={'class': 'form-control'}), required=False)
 
     def __init__(self, *ar, **kw):
         try:
@@ -298,6 +302,17 @@ class RollForm(forms.ModelForm):
         if char is not None:
             self.fields['parm'].queryset = CharParm.objects.filter(character=char).all()
             self.instance.character = char
+
+    def is_valid(self):
+        valid = super(RollForm, self).is_valid()
+        if self.cleaned_data['parm'] is None and self.cleaned_data['parm_name'] == '':
+            self._errors['Нет названия'] = ': Если вы не выбрали параметр заполните название'
+            valid = False
+        if self.cleaned_data['parm'] is None and self.cleaned_data['base_dice'] == '':
+            self._errors['Нет формулы'] = ': Если вы не выбрали параметр заполните формулу кубов'
+            valid = False
+        return valid
+
 
 class CharChooseForm(forms.Form):
     char = forms.ModelChoiceField(queryset=Character.objects.none())

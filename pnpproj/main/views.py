@@ -78,8 +78,6 @@ def new_game(request):
             form = NewGameForm(request.POST)
             if form.is_valid():
                 form.save()
-                request.user.first_name = form.cleaned_data['invite']
-                request.user.save()
                 return redirect(reverse('edit_setting')+'?setting='+str(form.cleaned_data.get('setting').pk))
 
     settings = Setting.objects.filter(owner=request.user).all()
@@ -117,7 +115,7 @@ def switch_game(request, **kwargs):
 def add_languages(request): #also edit groups
     GamesEditFormSet = inlineformset_factory(Setting, Game, fields=('name', 'flavour'), can_delete=True, extra=0)
     LanguageFormSet = inlineformset_factory(Setting, Languages, fields=('name',), extra=1)
-    ParmGroupFormSetBase = inlineformset_factory(Setting, ParmGroup, fields=('position', 'name', 'flavour', 'cost_to_add', 'cost'),
+    ParmGroupFormSetBase = inlineformset_factory(Setting, ParmGroup, fields=('position', 'name', 'flavour', 'cost_to_add', 'cost', 'base_dice', 'multiple'),
                                              extra=0)
     TemplateFormSetBase = inlineformset_factory(ParmGroup, CharParmTemplate, form=TemplateInlineForm, extra=0)
 

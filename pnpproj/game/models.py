@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-import json
+import re
 from django.db import models
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
@@ -8,7 +8,7 @@ from django.db.models.signals import post_save, m2m_changed
 import re
 from barnum import gen_data
 import random
-from math import ceil
+from math import ceil, floor
 import time
 
 
@@ -96,15 +96,17 @@ class ParmGroup(models.Model):
     name = models.CharField(max_length=25)
     flavour = models.CharField(max_length=2000, blank=True)
     cost_to_add = models.IntegerField(default=40)
+    multiple = models.FloatField(default=10)
+    base_dice = models.CharField(default='1e100', max_length=25)
     cost = models.IntegerField(default=1)
 
 class CharParmTemplate(models.Model):
     setting = models.ForeignKey(Setting, on_delete=models.CASCADE)
     group = models.ForeignKey(ParmGroup, on_delete=models.CASCADE)
-    base_dice = models.IntegerField(default=100)
+    base_dice = models.CharField(default='', blank=True, max_length=25)
     name = models.CharField(max_length=50)
     flavour = models.CharField(max_length=2000)
-    multiple = models.FloatField(default=10)
+    multiple = models.FloatField(default=-1)
     value = models.IntegerField()  # initial value
     affected_by = models.ManyToManyField('self', symmetrical=False)
 
@@ -115,22 +117,28 @@ class CharParm(models.Model):
     template = models.ForeignKey(CharParmTemplate, on_delete=models.CASCADE, null=True)
     character = models.ForeignKey(Character, on_delete=models.CASCADE)
     group = models.ForeignKey(ParmGroup, on_delete=models.CASCADE)
-    base_dice = models.IntegerField(default=100)
+    base_dice = models.CharField(default='', blank=True, max_length=25)
     name = models.CharField(max_length=50)
     flavour = models.CharField(max_length=2000)
-    value = models.IntegerField()
-    multiple = models.FloatField(default=10)
+    value = models.IntegerField(default=0)
+    multiple = models.FloatField(default=-1)
     override_cost = models.IntegerField(default=-1)
     affected_by = models.ManyToManyField('self', symmetrical=False)
 
     def __str__(self):
         return self.group.name + '/' + self.name
 
-    def roll_bonus(self, root=list()):
-        val = self.value
-        if self.name in root:
-            return self.value
-        root.append(self.name)
+    def roll_bonus(self, root=None):
+        multiple = self.multiple if self.multiple > -1 else self.group.multiple
+        val = floor(self.value*multiple)
+        if root is not None:
+            if self.name in root:
+                return val
+            else:
+                root.append(self.name)
+        else:
+            root = list()
+            root.append(self.name)
         for aff in self.affected_by.all():
             val += int(aff.roll_bonus(root))
         influences = Influence.objects.filter(infset__character=self.character).filter(affects=self).all()
@@ -138,16 +146,28 @@ class CharParm(models.Model):
             val += int(inf.value)
         return val
 
-    def true_value(self, root=list()):
-        val = self.value
-        if self.name in root:
-            return self.value
-        root.append(self.name)
+    def true_value(self, root=None):
+        multiple = self.multiple if self.multiple > -1 else self.group.multiple
+        val = floor(self.value*multiple)
+        if root is not None:
+            if self.name in root:
+                return val
+            else:
+                root.append(self.name)
+        else:
+            root = list()
+            root.append(self.name)
         for aff in self.affected_by.all():
-            val += int(aff.true_value(root))
+            val += int(aff.true_value(root=root))
         influences = Influence.objects.filter(affects=self).filter(visible=True).all()
         for inf in influences:
-            val += int(inf.value)
+            infset = inf.infset
+            items = Item.objects.filter(item=infset).filter(is_active=True).all()
+            for item in items:
+                val += inf.value
+            statuses = Status.objects.filter(item=infset).all()
+            for status in statuses:
+                val += inf.value
         return val  # to fix. how we display the value after items and shit.
 
     def affected_string(self):
@@ -156,7 +176,13 @@ class CharParm(models.Model):
             textlist[aff.name] = aff.true_value()
         influences = Influence.objects.filter(affects=self).filter(visible=True).all()
         for inf in influences:
-            textlist[inf.affects.name] = inf.value
+            infset = inf.infset
+            items = Item.objects.filter(item=infset).filter(is_active=True).all()
+            for item in items:
+                textlist[item.name] = inf.value
+            statuses = Status.objects.filter(item=infset).all()
+            for status in statuses:
+                textlist[status.name] = inf.value
         return textlist
 
 
@@ -197,12 +223,12 @@ class InfSet(models.Model):
     character = models.ForeignKey(Character)
     reference = models.CharField(max_length=250)
 
-    def affected_string(self):
+    def affected_string(self, gm=True):
         affects = Influence.objects.filter(infset=self).all()
         aff_list = dict()
         question_counter = 1
         for aff in affects:
-            if aff.visible:
+            if aff.visible or gm:
                 aff_list[aff.affects.name] = aff.value
             else:
                 aff_list[question_counter * '?'] = question_counter * '?'
@@ -220,7 +246,7 @@ class Status(models.Model):
     turns = models.IntegerField(blank=True, null=True)
 
     def affected_string(self):
-        aff_list = self.item.affected_string()
+        aff_list = self.item.affected_string(gm=False)
         return aff_list
 
 
@@ -233,7 +259,7 @@ class Item(models.Model):
     count = models.IntegerField(default=1)
 
     def affected_string(self):
-        aff_list = self.item.affected_string()
+        aff_list = self.item.affected_string(gm=False)
         return aff_list
 
 
@@ -324,7 +350,7 @@ class Roll(models.Model):
     character = models.ForeignKey(Character, on_delete=models.CASCADE, null=True)
     parm = models.ForeignKey(CharParm, on_delete=models.SET_NULL, null=True)
     parm_name = models.CharField(max_length=250)
-    base_dice = models.IntegerField(default=100)
+    base_dice = models.CharField(max_length=25)
     dice_roll = models.IntegerField(default=0)
     parm_bonus = models.IntegerField(default=0)
     free_bonus = models.IntegerField(default=0)
@@ -339,19 +365,54 @@ class Roll(models.Model):
     def make_roll(self, action, char=None):
         if self.parm_name == '':
             self.parm_name = self.parm.name
+        if self.base_dice == '':
+            self.base_dice = self.parm.base_dice if self.parm.base_dice != '' else self.parm.group.base_dice
         if char is not None:
             self.character = char
-        self.dice_roll = self.roll()
-        self.parm_bonus = 0 if self.parm is None else self.parm.roll_bonus()*self.parm.multiple
+        self.dice_roll = self.parse_dice()
+        self.parm_bonus = 0 if self.parm is None else self.parm.roll_bonus()
         self.action = action
 
-    def roll(self, exploding=False):
-        roll = ceil(random.random() * self.base_dice)
-        if roll >= self.base_dice - self.base_dice * 0.05:
-            roll += self.roll(exploding=True)
-        if not exploding and roll <= self.base_dice * 0.05:
-            roll -= self.roll(exploding=True)
+    def roll(self, dice, can_explode, exploding=False):
+        roll = ceil(random.random() * dice)
+        if roll >= dice - ceil(dice * 0.05) and can_explode:
+            roll += self.roll(dice, can_explode, exploding=True)
+        if not exploding and roll <= ceil(dice * 0.05) and can_explode:
+            roll -= self.roll(dice, can_explode, exploding=True)
         return roll
+
+    def parse_dice(self):
+        exp = r'\-|\+'
+        rolllist = re.split(exp, self.base_dice)
+        seps = re.compile(exp).findall(self.base_dice)
+        seps.insert(0, None)
+        roll_result = 0
+        for roll, do in zip(rolllist, seps):
+            if roll.find('d') > -1:
+                count, dice = roll.split('d')
+                explode = False
+            elif roll.find('e') > -1:
+                count, dice = roll.split('e')
+                explode = True
+            else:
+                return -1
+            try:
+                count = int(count)
+                dice = int(dice)
+            except ValueError:
+                return -1
+            inner_roll = 0
+            for a in range(0, count):
+                inner_roll += self.roll(dice, explode)
+            if do == '+':
+                roll_result += inner_roll
+            elif do == '-':
+                roll_result -= inner_roll
+            else:
+                roll_result = inner_roll
+
+        return roll_result
+
 
     def show_roll(self, player):
         roll = dict()
@@ -376,8 +437,7 @@ class Roll(models.Model):
         roll['base_dice'] = self.base_dice
         roll['dice_roll'] = self.dice_roll if visibility.visible_dice_roll else '?'
         roll['bonus'] = self.parm_bonus + self.free_bonus if visibility.visible_bonus else '?'
-        roll[
-            'cool_sum'] = self.dice_roll + self.parm_bonus + self.free_bonus if visibility.visible_bonus and visibility.visible_dice_roll else '?'
+        roll['cool_sum'] = self.dice_roll + self.parm_bonus + self.free_bonus if visibility.visible_bonus and visibility.visible_dice_roll else '?'
         roll['difficulty'] = self.difficulty if visibility.visible_difficulty else '?'
         roll['result'] = result if visibility.visible_result else '?'
         if not visibility.visible_passed:
@@ -409,32 +469,32 @@ def populate_groups(sender, instance, created, *args, **kwargs):
         lang = Languages(setting=instance, name='common')
         lang.save()
         grp = ParmGroup(setting=instance, name='Статы', cost_to_add=-1, cost=25,
-                        flavour='Базовые возможности персонажа', position=0)
+                        flavour='Базовые возможности персонажа', position=0, base_dice='1d10', multiple=2)
         grp.save()
 
-        strength = CharParmTemplate(setting=instance, group=grp, name='Сила', value=5, multiple=2,
+        strength = CharParmTemplate(setting=instance, group=grp, name='Сила', value=5,
                                     flavour='Физическая сила персонажа -- я могу поднять помидор.')
         strength.save()
-        constitution = CharParmTemplate(setting=instance, group=grp, name='Выносливость', value=5, multiple=2,
+        constitution = CharParmTemplate(setting=instance, group=grp, name='Выносливость', value=5,
                                         flavour='Выносливость персонажа -- я могу съесть тухлый помидор')
         constitution.save()
-        dexterity = CharParmTemplate(setting=instance, group=grp, name='Ловкость', value=5, multiple=2,
+        dexterity = CharParmTemplate(setting=instance, group=grp, name='Ловкость', value=5,
                                      flavour='Ловкость персонажа -- я могу кинуть помидор')
         dexterity.save()
-        agility = CharParmTemplate(setting=instance, group=grp, name='Скорость', value=5, multiple=2,
+        agility = CharParmTemplate(setting=instance, group=grp, name='Скорость', value=5,
                                    flavour='Скорость персонажа -- я могу догнать помидор')
         agility.save()
-        intelligence = CharParmTemplate(setting=instance, group=grp, name='Интеллект', value=5, multiple=2,
+        intelligence = CharParmTemplate(setting=instance, group=grp, name='Интеллект', value=5,
                                         flavour='Интеллект персонажа -- я знаю что помидор фрукт')
         intelligence.save()
-        perception = CharParmTemplate(setting=instance, group=grp, name='Внимание', value=5, multiple=2,
+        perception = CharParmTemplate(setting=instance, group=grp, name='Внимание', value=5,
                                       flavour='Внимание персонажа -- я могу следить за тремя помидорами')
         perception.save()
-        power = CharParmTemplate(setting=instance, group=grp, name='Харизма', value=5, multiple=2,
+        power = CharParmTemplate(setting=instance, group=grp, name='Харизма', value=5,
                                  flavour='Сила Духа персонажа -- я могу заколдовать или продать '
                                          'фруктовый салат с помидором')
         power.save()
-        willpower = CharParmTemplate(setting=instance, group=grp, name='Воля', value=5, multiple=2,
+        willpower = CharParmTemplate(setting=instance, group=grp, name='Воля', value=5,
                                      flavour='Сила Воли персонажа -- я могу устоять от того чтобы делать '
                                              'фруктовый салат с помидором')
         willpower.save()
@@ -448,14 +508,14 @@ def populate_groups(sender, instance, created, *args, **kwargs):
         initiative.affected_by.add(dexterity)
         initiative.affected_by.add(agility)
         initiative.save()
-        health = CharParmTemplate(setting=instance, group=grp, name='Здоровье', value=5,
+        health = CharParmTemplate(setting=instance, group=grp, name='Здоровье', value=4, base_dice='1d10', multiple=1,
                                   flavour='Здоровье персонажа. Персонаж не имеет проблем пока успешно прокидывает '
                                           'сложность здоровья. Прокачивать здоровье проще, чем выносливость')
         health.save()
         health.affected_by.add(constitution)
         health.save()
 
-        grp = ParmGroup(setting=instance, name='Бой', cost_to_add=-1, cost=10,
+        grp = ParmGroup(setting=instance, name='Бой', cost_to_add=-1, cost=5,
                         flavour='Боевые способности персонажа', position=2)
         grp.save()
         attack = CharParmTemplate(setting=instance, group=grp, name='Атака', value=0,
@@ -495,7 +555,7 @@ def populate_groups(sender, instance, created, *args, **kwargs):
         mana.affected_by.add(power)
         mana.save()
 
-        grp = ParmGroup(setting=instance, name='Вторичное', cost_to_add=-1, cost=5,
+        grp = ParmGroup(setting=instance, name='Вторичное', cost_to_add=-1, cost=2,
                         flavour='Вторичные навыки', position=4)
         grp.save()
         acrobatics = CharParmTemplate(setting=instance, group=grp, name='Акробатика', value=0,
@@ -553,7 +613,7 @@ def populate_groups(sender, instance, created, *args, **kwargs):
         grp = ParmGroup(setting=instance, name='Умения', cost_to_add=25, cost=-1,
                         flavour='Боевые маневры, заклинания и другие приемы, которые выучил персонаж.'
                                 'Если действия персонажа, выбивающегося из обычного, нет в этом списке - '
-                                'Он хуже будет выполнять его.', position=0)
+                                'Он хуже будет выполнять его.', position=7)
         grp.save()
 
 
@@ -611,7 +671,6 @@ def rebase_parms(sender, instance, created, *args, **kwargs):
 @receiver(m2m_changed, sender=CharParmTemplate.affected_by.through)
 def rebase_parm_m2m(sender, instance, *args, **kwargs):
     characters = Character.objects.filter(game__setting=instance.setting).all()
-    print(characters)
     for character in characters:
         parm = CharParm.objects.filter(template=instance).first()
         if parm is not None:

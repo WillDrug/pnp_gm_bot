@@ -21,6 +21,7 @@
             <input type="hidden" name="choose_char" value="true">
         {% else %}
             {{ form.id }}
+            {{ form.errors }}
             <div class="row">
                 <div class="col-md-6">Параметр для броска</div>
                 <div class="col-md-6">Имя параметра<div class="act_tooltip pull-right"><span class="pull-right glyphicon glyphicon-question-sign"></span><div class="act_tooltiptext"><small>Требуется при пустом поле "параметр". Если поле пустое туда подставится название выбранного параметра.</small></div></div></div>
@@ -36,6 +37,10 @@
             <div class="row">
                 <div class="col-md-6">{{ form.free_bonus }}</div>
                 <div class="col-md-6">{{ form.difficulty }}</div>
+            </div>
+            <div class="row">
+                <div class="col-md-6">Формула куба<br><small class="muted">Складывать и вычитать. 1d100 это один 100гранник, 1e100 это стогранник со взрывом и ботчом (при крайности в 5%)</small></div>
+                <div class="col-md-6">{{ form.base_dice }}</div>
             </div>
             <input type="hidden" name="char" value="{{char.pk}}">
             <ul class="d-flex flex-row">

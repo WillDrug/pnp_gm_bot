@@ -45,7 +45,7 @@
 <div class="row panel panel-default">
     <div class="col-md-9" style="margin-top: 5px; margin-bottom: 15px">
         <h3>Группы Параметров</h3>
-        <small>Группа единообразных навыков персонажа. Имеет название, стоимоть повышения навыка (можно перезатереть для конкретного игрока, -1 -- нельзя повышать) и стоимость добавления нового навыка (-1 -- игрок не может добавлять новый)</small>
+        <small>Группа единообразных навыков персонажа. Имеет название, стоимоть повышения навыка (можно перезатереть для конкретного игрока, -1 -- нельзя повышать) и стоимость добавления нового навыка (-1 -- игрок не может добавлять новый)<br>Бросок кубика это формула. 1d100 кинет один 100гранник. 1e100 кинет 100гранник со взрывом (Если выше порога *0.05 ещё раз кинется. Если ниже - ботч, кинется и вычтется.)</small>
     </div>
     <div class="col-md-3" style="margin-top: 5px; margin-bottom: 15px">
             <h3>Языки</h3>
@@ -98,6 +98,10 @@
                             Стоимость</label><br>
                         {{ groupformset.empty_form.cost }}
                     </div>
+                    <div class="form-group">
+                        <label>Множитель</label><br>
+                        {{ groupformset.empty_form.multiple }}
+                    </div>
                 </div>
                 <div class="col-md-1"></div>
             </div></div></div>
@@ -141,6 +145,13 @@
 				                    <z style="margin-right: 10px">Удалить</z> {{ form.DELETE }}
 		    	                </label>
                             </div>
+                            <div class="form-group">
+                                <label>Формула куба</label>{{form.base_dice}}
+                            </div>
+                            <div class="form-group">
+                                <label>Множитель</label><br>
+                                {{ form.multiple }}
+                            </div>
                         </div>
                         <div class="col-md-1"></div>
                     </div>
@@ -160,20 +171,20 @@
                                 <div class="row" style="border-bottom: 1px grey solid; padding: 10px 0px 10px 50px;">
                                     {{ templateset.empty_form.setting }}
                                     <div class="row">
-                                        <div class="col-md-8">
+                                        <div class="col-md-7">
                                             Название\Описание
                                         </div>
-                                        <div class="col-md-4">
-                                            Куб, Стартовый бонус\Множитель
+                                        <div class="col-md-5">
+                                            Куб, Стартовый бонус\Множитель, Стоимость
                                         </div>
                                     </div>
                                     <div class="row">
-                                        <div class="col-md-8">{{ templateset.empty_form.name }}</div>
-                                        <div class="col-md-4">{{ templateset.empty_form.base_dice|attr:"style:width:50%" }}{{ templateset.empty_form.value|attr:"style:width:50%" }}</div>
+                                        <div class="col-md-7">{{ templateset.empty_form.name }}</div>
+                                        <div class="col-md-5" style="display: flex">{{ templateset.empty_form.base_dice|attr:"style:width:50%" }}{{ templateset.empty_form.value|attr:"style:width:50%"|add_class:"form-control" }}</div>
                                     </div>
                                     <div class="row">
-                                        <div class="col-md-8">{{ templateset.empty_form.flavour|attr:"rows:1" }}</div>
-                                        <div class="col-md-4">{{ templateset.empty_form.multiple}}</div>
+                                        <div class="col-md-7">{{ templateset.empty_form.flavour|attr:"rows:1" }}</div>
+                                        <div class="col-md-5" style="display: flex">{{ templateset.empty_form.multiple|add_class:"form-control"|attr:"style:width:50%"}}{{ templateset.empty_form.cost|add_class:"form-control"|attr:"style:width:50%"</div>
                                     </div>
                                     <div class="row">
                                         <div class="col-md-12">
@@ -195,28 +206,28 @@
                                     {{ template.id }}
                                     {{ template.setting }}
                                     <div class="row">
-                                        <div class="col-md-8">
+                                        <div class="col-md-7">
                                             Название\Описание
                                         </div>
-                                        <div class="col-md-4">
-                                            Куб, Стартовый бонус\Множитель
+                                        <div class="col-md-5">
+                                            Куб, Стартовый бонус\Множитель, Стоимость
                                         </div>
                                     </div>
-                                    <div class="row">
-                                        <div class="col-md-8">{{ template.name|attr:"placeholder:Название" }}</div>
-                                        <div class="col-md-4">{{ template.base_dice|attr:"style:width:50%" }}{{ template.value|attr:"style:width:50%" }}</div>
+                                    <div class="row" >
+                                        <div class="col-md-7">{{ template.name|attr:"placeholder:Название" }}</div>
+                                        <div class="col-md-5" style="display: flex">{{ template.base_dice|attr:"style:width:50%" }}{{ template.value|attr:"style:width:50%"|add_class:"form-control" }}</div>
                                     </div>
                                     <div class="row">
-                                        <div class="col-md-8">{{ template.flavour|attr:"rows:1"|attr:"placeholder:Название" }}</div>
-                                        <div class="col-md-4">{{ template.multiple}}</div>
+                                        <div class="col-md-7">{{ template.flavour|attr:"rows:1"|attr:"placeholder:Название" }}</div>
+                                        <div class="col-md-5" style="display: flex">{{ template.multiple|add_class:"form-control"|attr:"style:width:50%"}}{{ template.cost|attr:"style:width:50%"|add_class:"form-control" }}</div>
                                     </div>
                                     <div class="clearfix">
-                                        <div class="col-md-4">
+                                        <div class="col-md-5">
                                             <label class="btn btn-danger delete-check">
                                                 <z style="margin-right: 10px">Удалить</z> {{ template.DELETE }}
                                             </label>
                                         </div>
-                                        <div class="col-md-8">
+                                        <div class="col-md-7">
                                             <h4><a data-toggle="collapse" data-target="#affected_{{template.instance.pk}}" aria-expanded="true">Влияния</a></h4>
                                         </div>
                                     </div>
