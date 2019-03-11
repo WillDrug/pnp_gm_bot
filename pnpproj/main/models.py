@@ -18,3 +18,5 @@ class Chat(models.Model):
     def save(self, *ar, **kw):
         self.added = time.time()
         super(Chat, self).save(*ar, **kw)
+
+

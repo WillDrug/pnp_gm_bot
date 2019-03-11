@@ -28,6 +28,7 @@
                 {% if form.present %}
                     <form id="gmform{{action.pk}}" method="POST" action="{{form.action}}?action={{action.pk}}">
                         {% csrf_token %}
+                        {{ form.errors }}
                         {{ form.form.id }}
                         {{ form.form.response|attr:"rows:2"|attr:"style:width:100%" }}
                         <button type="button" style="padding-right: 5px;" class="btn btn-default" id="editaction{{action.pk}}"><span class="glyphicon glyphicon-edit"></span>Редактировать</span></button>
